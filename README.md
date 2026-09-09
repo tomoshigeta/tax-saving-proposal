@@ -1,0 +1,38 @@
+# 不動産投資提案書作成アプリ
+
+投資用不動産(キャッシュフロー・節税重視)の提案書をA4で生成する社内ツール。
+
+- 仕様: [docs/spec.md](docs/spec.md)
+- 設計判断の記録: [docs/decisions.md](docs/decisions.md)
+
+## 開発
+
+```sh
+npm install
+npm run dev        # 開発サーバー
+npm test           # 計算エンジンのテスト
+npm run typecheck
+npm run build      # dist/ に静的ファイルを出力
+```
+
+サーバーサイドはなく、成果物は静的ファイルのみ。提案履歴は各利用者のブラウザの
+IndexedDB に保存されるため、静的ホスティングに公開しても他人からは見えない。
+
+## 構成
+
+```
+src/domain/     計算エンジン(UIから独立、テストあり)
+  units.ts        金額の単位を型で分ける(月額/年額/率)
+  structures.ts   建物構造と法定耐用年数
+  depreciation.ts 耐用年数(簡便法)と減価償却
+  loan.ts         元利均等返済、土地対応借入の建物優先充当
+  simulate.ts     提案書の全数値を1回で算出する入口
+  validate.ts     入力の整合性チェック
+src/storage/    IndexedDB と JSON バックアップ
+src/ui/         3画面(一覧 / 入力 / プレビュー)と提案書レイアウト
+```
+
+## 注意
+
+提案書に載る数字は税務計算そのものなので、`src/domain/` を変更したら必ず
+`npm test` を通すこと。ローンの計算値は手計算値でテストに固定してある。
