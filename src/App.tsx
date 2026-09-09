@@ -53,6 +53,11 @@ export function App() {
     [refresh],
   )
 
+  /** EditScreen からの更新。非同期の更新どうしが上書きし合わないよう関数で受ける */
+  const updateDraft = useCallback((update: (prev: SavedProposal) => SavedProposal) => {
+    setDraft((prev) => (prev ? update(prev) : prev))
+  }, [])
+
   const openForEdit = async (id: string) => {
     const found = await getProposal(id)
     if (!found) return
@@ -135,7 +140,7 @@ export function App() {
     <EditScreen
       proposal={draft}
       saving={saving}
-      onChange={setDraft}
+      onChange={updateDraft}
       onSave={() => void save(draft)}
       onPreview={() => {
         void save(draft)

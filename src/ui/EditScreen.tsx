@@ -11,7 +11,11 @@ import { useObjectUrl } from './useObjectUrl'
 
 interface Props {
   proposal: SavedProposal
-  onChange: (next: SavedProposal) => void
+  /**
+   * 更新関数を渡す形にしてある。値を渡す形だと、画像の読み込みのように
+   * 非同期で戻ってくる更新どうしが互いを上書きして、片方が消える。
+   */
+  onChange: (update: (prev: SavedProposal) => SavedProposal) => void
   onSave: () => void
   onPreview: () => void
   onBack: () => void
@@ -23,7 +27,7 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
   const { input } = proposal
 
   const set = <K extends keyof ProposalInput>(key: K, value: ProposalInput[K]) =>
-    onChange({ ...proposal, input: { ...input, [key]: value } })
+    onChange((prev) => ({ ...prev, input: { ...prev.input, [key]: value } }))
 
   const errors = useMemo(() => validate(input), [input])
   const errorFor = (field: keyof ProposalInput) => errors.find((e) => e.field === field)?.message
@@ -35,7 +39,8 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
   const pickImage = async (key: 'floorPlan' | 'exterior', file: File) => {
     setImageError(null)
     try {
-      onChange({ ...proposal, [key]: await normalizeImage(file) })
+      const blob = await normalizeImage(file)
+      onChange((prev) => ({ ...prev, [key]: blob }))
     } catch {
       setImageError('この画像は読み込めませんでした。別のファイルを試してください。')
     }
@@ -92,13 +97,13 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
               label="間取り図"
               url={floorPlanUrl}
               onPick={(f) => void pickImage('floorPlan', f)}
-              onClear={() => onChange({ ...proposal, floorPlan: null })}
+              onClear={() => onChange((prev) => ({ ...prev, floorPlan: null }))}
             />
             <ImageField
               label="外観写真"
               url={exteriorUrl}
               onPick={(f) => void pickImage('exterior', f)}
-              onClear={() => onChange({ ...proposal, exterior: null })}
+              onClear={() => onChange((prev) => ({ ...prev, exterior: null }))}
             />
             {imageError && <p className="form-error">{imageError}</p>}
 
