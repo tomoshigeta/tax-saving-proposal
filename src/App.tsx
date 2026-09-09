@@ -7,8 +7,13 @@ import type { SavedProposal } from './storage/types'
 import { ListScreen } from './ui/ListScreen'
 import { EditScreen } from './ui/EditScreen'
 import { PreviewScreen } from './ui/PreviewScreen'
+import { HelpScreen } from './ui/HelpScreen'
 
-type Screen = { name: 'list' } | { name: 'edit'; id: string } | { name: 'preview'; id: string }
+type Screen =
+  | { name: 'list' }
+  | { name: 'help' }
+  | { name: 'edit'; id: string }
+  | { name: 'preview'; id: string }
 
 const blankProposal = (): SavedProposal => ({
   id: newId(),
@@ -141,11 +146,16 @@ export function App() {
     }
   }
 
+  if (screen.name === 'help') {
+    return <HelpScreen onBack={() => setScreen({ name: 'list' })} />
+  }
+
   if (screen.name === 'list') {
     return (
       <ListScreen
         proposals={proposals}
         onCreate={create}
+        onHelp={() => setScreen({ name: 'help' })}
         onOpen={(id) => void openForEdit(id)}
         onDuplicate={(id) => void duplicate(id)}
         onDelete={(id) => void remove(id)}

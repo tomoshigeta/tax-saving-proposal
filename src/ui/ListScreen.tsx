@@ -7,6 +7,7 @@ import { dateText, signedYenText, yenText } from './format'
 interface Props {
   proposals: SavedProposal[]
   onCreate: () => void
+  onHelp: () => void
   onImportExcel: (file: File) => void
   onOpen: (id: string) => void
   onDuplicate: (id: string) => void
@@ -19,6 +20,7 @@ interface Props {
 export function ListScreen({
   proposals,
   onCreate,
+  onHelp,
   onImportExcel,
   onOpen,
   onDuplicate,
@@ -35,6 +37,10 @@ export function ListScreen({
       <header className="toolbar">
         <h1>提案書一覧</h1>
         <div className="toolbar-actions">
+          <button type="button" className="btn btn-quiet" onClick={onHelp}>
+            使い方
+          </button>
+          <span className="toolbar-divider" aria-hidden="true" />
           <a className="btn btn-quiet" href={`${import.meta.env.BASE_URL}rent-assessment-template.xlsx`} download>
             Excelテンプレート
           </a>
@@ -87,10 +93,15 @@ export function ListScreen({
       {message && <p className="banner">{message}</p>}
 
       {proposals.length === 0 ? (
-        <p className="empty">
-          まだ提案書がありません。「新規作成」から入力するか、Excelテンプレートに
-          まとめて書いてから「Excelから取り込み」を押してください。
-        </p>
+        <div className="empty">
+          <p>
+            まだ提案書がありません。「新規作成」から入力するか、Excelテンプレートに
+            まとめて書いてから「Excelから取り込み」を押してください。
+          </p>
+          <button type="button" className="btn" onClick={onHelp}>
+            使い方を読む
+          </button>
+        </div>
       ) : (
         <ul className="cards">
           {proposals.map((p) => {
