@@ -26,7 +26,7 @@ Chart.register(
   Filler,
 )
 
-const axisText = { color: VIZ.textSecondary, font: { size: 10 } }
+const axisText = { color: VIZ.textMuted, font: { size: 9 } }
 const nf = new Intl.NumberFormat('ja-JP')
 const manTick = (v: number) => (v === 0 ? '0' : `${nf.format(Math.round(v / 10_000))}万`)
 
@@ -34,7 +34,7 @@ const manTick = (v: number) => (v === 0 ? '0' : `${nf.format(Math.round(v / 10_0
 const sharedX = (labels: number[]) => ({
   type: 'category' as const,
   grid: { display: false },
-  border: { color: VIZ.grid },
+  border: { color: VIZ.axis },
   ticks: {
     ...axisText,
     // 目盛りの間引きは下の callback が担う。autoSkip に任せると 10年 / 20年 が落ちる
@@ -89,8 +89,8 @@ export function TaxSavingChart({ years, values }: Props) {
       datasets: [
         {
           data: values,
-          backgroundColor: VIZ.series1,
-          maxBarThickness: 24,
+          backgroundColor: VIZ.series,
+          maxBarThickness: 22,
           borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
           borderSkipped: false,
         },
@@ -125,8 +125,8 @@ export function LoanBalanceChart({ years, values }: Props) {
       datasets: [
         {
           data: values,
-          borderColor: VIZ.series2,
-          backgroundColor: `${VIZ.series2}1a`,
+          borderColor: VIZ.series,
+          backgroundColor: VIZ.seriesFill,
           borderWidth: 2,
           borderJoinStyle: 'round',
           borderCapStyle: 'round',
@@ -134,7 +134,7 @@ export function LoanBalanceChart({ years, values }: Props) {
           tension: 0,
           pointRadius: 0,
           pointHoverRadius: 5,
-          pointHoverBackgroundColor: VIZ.series2,
+          pointHoverBackgroundColor: VIZ.series,
           pointHoverBorderColor: VIZ.surface,
           pointHoverBorderWidth: 2,
         },
