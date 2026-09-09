@@ -8,6 +8,14 @@ export type IncomeTaxRatePercent = (typeof INCOME_TAX_RATES)[number]
 /** 住民税は一律10%。復興特別所得税は考慮しない */
 export const RESIDENT_TAX_PERCENT = 10
 
+/**
+ * 試算期間(年)。定年がいつかに関わらず固定する。
+ *
+ * 節税が効くのは給与所得がある間だけで、想定顧客は50歳前後・定年65歳。
+ * 顧客ごとに期間が変わると提案書どうしを見比べられないため、15年に固定した。
+ */
+export const SIMULATION_YEARS = 15
+
 export interface ProposalInput {
   // --- 物件 ---
   propertyName: string
@@ -44,7 +52,6 @@ export interface ProposalInput {
 
   // --- 顧客 ---
   currentAge: number
-  retirementAge: number
   incomeTaxRatePercent: IncomeTaxRatePercent
 }
 
@@ -85,9 +92,9 @@ export interface Simulation {
   fixturesBasis: Yen
   landInterestRatio: Rate
   combinedTaxRate: Rate
-  /** 試算期間。現在年齢から定年年齢まで。rows.length に一致する */
-  yearsToRetirement: number
-  /** 定年までの節税額合計 */
+  /** 試算期間(年)。SIMULATION_YEARS 固定で、rows.length に一致する */
+  simulationYears: number
+  /** 試算期間の節税額合計 */
   totalTaxSaving: Yen
   rows: YearRow[]
 }

@@ -242,14 +242,8 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
               value={input.currentAge}
               onChange={(n) => set('currentAge', n)}
               suffix="歳"
+              hint="年次明細の年齢欄に使います。試算期間は15年で固定です"
               error={errorFor('currentAge')}
-            />
-            <NumberField
-              label="定年年齢"
-              value={input.retirementAge}
-              onChange={(n) => set('retirementAge', n)}
-              suffix="歳"
-              error={errorFor('retirementAge')}
             />
             <label className="field">
               <span className="field-label">所得税率</span>
@@ -290,7 +284,7 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
                   </dd>
                 </div>
                 <div className="summary-hero">
-                  <dt>定年までの節税効果 合計</dt>
+                  <dt>{sim.simulationYears}年間の節税効果 合計</dt>
                   <dd>{yenText(sim.totalTaxSaving)}</dd>
                 </div>
                 <div>

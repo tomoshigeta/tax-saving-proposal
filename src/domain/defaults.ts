@@ -18,7 +18,6 @@ export const emptyInput = (): ProposalInput => ({
   guaranteedRentMonthly: perMonth(0),
   managementFeeMonthly: perMonth(0),
   propertyTaxAnnual: perYear(0),
-  currentAge: 40,
-  retirementAge: 65,
+  currentAge: 50,
   incomeTaxRatePercent: 33,
 })

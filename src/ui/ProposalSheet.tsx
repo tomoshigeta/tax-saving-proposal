@@ -72,10 +72,6 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
                 </span>
               </dd>
             </div>
-            <div>
-              <dt>定年までの年数</dt>
-              <dd>{sim.yearsToRetirement}年</dd>
-            </div>
           </dl>
         </div>
 
@@ -87,7 +83,7 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
             </p>
           </div>
           <div className="hero">
-            <p className="hero-label">定年までの節税効果 合計</p>
+            <p className="hero-label">{sim.simulationYears}年間の節税効果 合計</p>
             <p className="hero-value">{yenText(sim.totalTaxSaving)}</p>
           </div>
         </div>
@@ -165,8 +161,7 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
             </tbody>
           </table>
           <p className="schedule-note">
-            現在年齢 {input.currentAge}歳 から定年 {input.retirementAge}歳 までの{' '}
-            {sim.yearsToRetirement}年間を試算しています。
+            購入から {sim.simulationYears}年間 を試算しています。
           </p>
         </section>
       )}

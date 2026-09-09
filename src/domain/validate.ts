@@ -40,11 +40,6 @@ export function validate(input: ProposalInput): FieldError[] {
   require('managementFeeMonthly', input.managementFeeMonthly >= 0, '管理費は0以上で入力してください')
   require('propertyTaxAnnual', input.propertyTaxAnnual >= 0, '固都税は0以上で入力してください')
   require('currentAge', input.currentAge > 0, '現在年齢を入力してください')
-  require(
-    'retirementAge',
-    input.retirementAge > input.currentAge,
-    '定年年齢は現在年齢より大きい必要があります',
-  )
 
   return errors
 }

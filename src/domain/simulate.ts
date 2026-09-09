@@ -1,7 +1,13 @@
 import { amortize, landInterestRatio } from './loan'
 import { annualDepreciation, depreciationBases, usefulLifeFor } from './depreciation'
 import { FIXTURES_USEFUL_LIFE, STRUCTURES, effectiveFixturesPrice } from './structures'
-import { RESIDENT_TAX_PERCENT, type ProposalInput, type Simulation, type YearRow } from './types'
+import {
+  RESIDENT_TAX_PERCENT,
+  SIMULATION_YEARS,
+  type ProposalInput,
+  type Simulation,
+  type YearRow,
+} from './types'
 import {
   annualize,
   floorYen,
@@ -29,9 +35,8 @@ export function simulate(input: ProposalInput): Simulation {
   const landPrice = y(input.price - input.buildingPrice)
   const loanPrincipal = y(Math.max(0, input.price - input.ownFunds))
 
-  // 提案の対象期間は定年まで。給与所得があるうちしか節税は効かず、
-  // 定年時に売却する前提のため、ローン残債も定年時点までしか描かない。
-  const yearsToRetirement = Math.max(1, input.retirementAge - input.currentAge)
+  // 試算期間は SIMULATION_YEARS 固定。顧客の定年時期には依存させない。
+  const simulationYears = SIMULATION_YEARS
 
   // --- 耐用年数 ---
   const statutory = STRUCTURES[input.structure].usefulLife
@@ -48,7 +53,7 @@ export function simulate(input: ProposalInput): Simulation {
   })
 
   // --- ローン ---
-  const schedule = amortize(loanPrincipal, input.interestRate, input.loanTermYears, yearsToRetirement)
+  const schedule = amortize(loanPrincipal, input.interestRate, input.loanTermYears, simulationYears)
   const landRatio = landInterestRatio(loanPrincipal, input.buildingPrice)
 
   // --- 月々CF (全期間一定) ---
@@ -69,7 +74,7 @@ export function simulate(input: ProposalInput): Simulation {
   const rows: YearRow[] = []
   let totalTaxSaving = 0
 
-  for (let year = 1; year <= yearsToRetirement; year++) {
+  for (let year = 1; year <= simulationYears; year++) {
     const loanYear = schedule.years[year - 1]
     const interestPaid = loanYear ? loanYear.interest : 0
     const balanceEnd = loanYear ? loanYear.balanceEnd : 0
@@ -121,7 +126,7 @@ export function simulate(input: ProposalInput): Simulation {
     fixturesBasis: y(bases.fixtures),
     landInterestRatio: rate(landRatio) as Rate,
     combinedTaxRate,
-    yearsToRetirement,
+    simulationYears,
     totalTaxSaving: y(totalTaxSaving),
     rows,
   }

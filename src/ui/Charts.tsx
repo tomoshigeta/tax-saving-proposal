@@ -30,10 +30,7 @@ const axisText = { color: VIZ.textSecondary, font: { size: 10 } }
 const nf = new Intl.NumberFormat('ja-JP')
 const manTick = (v: number) => (v === 0 ? '0' : `${nf.format(Math.round(v / 10_000))}万`)
 
-/**
- * 両グラフで横軸(年)を揃えるための共通設定。
- * 横軸は定年で終わるので、最終目盛りに「定年」を添える。
- */
+/** 両グラフで横軸(年)を揃えるための共通設定 */
 const sharedX = (labels: number[]) => ({
   type: 'category' as const,
   grid: { display: false },
@@ -47,7 +44,7 @@ const sharedX = (labels: number[]) => ({
       const i = Number(index)
       const year = labels[i]
       if (year === undefined) return ''
-      if (i === labels.length - 1) return `${year}年(定年)`
+      if (i === labels.length - 1) return `${year}年`
       // 5年刻みと初年度だけラベルを出す。最終目盛りと重なる位置は空ける
       const isLandmark = year === 1 || year % 5 === 0
       return isLandmark && i < labels.length - 2 ? `${year}年` : ''

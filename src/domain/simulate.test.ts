@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { simulate } from './simulate'
-import type { ProposalInput } from './types'
+import { SIMULATION_YEARS, type ProposalInput } from './types'
 import { perMonth, perYear, rate, yen } from './units'
 
 /**
@@ -24,8 +24,7 @@ const baseInput: ProposalInput = {
   guaranteedRentMonthly: perMonth(95_000),
   managementFeeMonthly: perMonth(15_000),
   propertyTaxAnnual: perYear(80_000),
-  currentAge: 45,
-  retirementAge: 65,
+  currentAge: 50,
   incomeTaxRatePercent: 33,
 }
 
@@ -45,25 +44,36 @@ describe('simulate', () => {
     expect(s.monthlyCashFlow).toBe(-26_045)
   })
 
-  it('試算期間は定年まで。返済期間が長くても定年で打ち切る', () => {
+  it('試算期間は15年固定。返済期間が長くても15年で打ち切る', () => {
     const s = simulate(baseInput)
-    expect(s.yearsToRetirement).toBe(20)
-    expect(s.rows).toHaveLength(20)
-    expect(s.rows.at(-1)!.age).toBe(65)
+    expect(s.simulationYears).toBe(SIMULATION_YEARS)
+    expect(s.rows).toHaveLength(15)
+    expect(s.rows.at(-1)!.year).toBe(15)
   })
 
-  it('返済期間が定年より短ければ、完済後の年は残債0で続く', () => {
+  it('顧客の年齢が変わっても試算期間は変わらない', () => {
+    const young = simulate({ ...baseInput, currentAge: 30 })
+    const old = simulate({ ...baseInput, currentAge: 58 })
+    expect(young.rows).toHaveLength(15)
+    expect(old.rows).toHaveLength(15)
+    expect(young.totalTaxSaving).toBe(old.totalTaxSaving)
+    // 年齢欄だけが動く
+    expect(young.rows[0]!.age).toBe(31)
+    expect(old.rows[0]!.age).toBe(59)
+  })
+
+  it('返済期間が15年より短ければ、完済後の年は残債0で続く', () => {
     const s = simulate({ ...baseInput, loanTermYears: 10 })
-    expect(s.rows).toHaveLength(20)
+    expect(s.rows).toHaveLength(15)
     expect(s.rows[9]!.loanBalanceEnd).toBe(0)
-    expect(s.rows[15]!.interestPaid).toBe(0)
-    expect(s.rows[15]!.loanBalanceEnd).toBe(0)
+    expect(s.rows[12]!.interestPaid).toBe(0)
+    expect(s.rows[12]!.loanBalanceEnd).toBe(0)
   })
 
-  it('定年時点のローン残債が最終行に出る(定年時売却の前提)', () => {
+  it('15年後のローン残債が最終行に出る', () => {
     const s = simulate(baseInput)
-    // 3,000万 / 2% / 35年 を20年返済した時点の残債
-    expect(s.rows.at(-1)!.loanBalanceEnd).toBeCloseTo(15_443_276, -2)
+    // 3,000万 / 2% / 35年 を15年返済した時点の残債
+    expect(s.rows.at(-1)!.loanBalanceEnd).toBeCloseTo(19_644_614, -2)
   })
 
   it('土地対応の借入割合を建物優先充当で出す', () => {
@@ -129,17 +139,10 @@ describe('simulate', () => {
     expect(blackYear.deductibleLoss).toBe(0)
   })
 
-  it('節税効果合計は試算期間(定年まで)の全年を集計する', () => {
+  it('節税効果合計は試算期間の全年を集計する', () => {
     const s = simulate(baseInput)
     const summed = s.rows.reduce((sum, r) => sum + Math.trunc(r.taxSaving), 0)
     expect(s.totalTaxSaving).toBe(Math.trunc(summed))
-  })
-
-  it('定年までが短いほど節税効果合計は小さくなる', () => {
-    const until65 = simulate(baseInput)
-    const until50 = simulate({ ...baseInput, retirementAge: 50 })
-    expect(until50.rows).toHaveLength(5)
-    expect(until50.totalTaxSaving).toBeLessThanOrEqual(until65.totalTaxSaving)
   })
 
   it('赤字が消える年より後は節税額が0で並ぶ', () => {

@@ -221,7 +221,8 @@ legend { font-weight: 600; font-size: 13px; padding: 0 6px; color: var(--text-se
   margin: 0;
   display: grid;
   gap: 0;
-  align-content: start;
+  /* 行数が変わっても枠が縦に伸びないようにする */
+  align-self: start;
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow: hidden;
