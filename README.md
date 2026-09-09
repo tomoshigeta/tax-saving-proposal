@@ -35,6 +35,22 @@ src/storage/    IndexedDB / JSONバックアップ / Excel取り込み
 src/ui/         3画面(一覧 / 入力 / プレビュー)と提案書レイアウト
 ```
 
+## デプロイ
+
+`main` またはこのプロジェクトの作業ブランチに push すると、GitHub Actions が
+typecheck → test → build を通したうえで GitHub Pages に公開する
+(`.github/workflows/deploy.yml`)。
+
+公開URL: `https://<owner>.github.io/rent-assessment/`
+
+初回だけリポジトリ側の設定が必要:
+**Settings → Pages → Build and deployment → Source を「GitHub Actions」にする。**
+
+Vite の `base` は `./` なので、サブパス配信でも資産・テンプレート・遅延読み込みの
+チャンクがすべて解決する。
+
+提案履歴は各利用者のブラウザの IndexedDB にあるため、公開しても他人からは見えない。
+
 ## 注意
 
 提案書に載る数字は税務計算そのものなので、`src/domain/` を変更したら必ず

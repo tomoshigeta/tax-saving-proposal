@@ -293,7 +293,7 @@
 | データ保存 | IndexedDB |
 | グラフ描画 | Chart.js |
 | PDF化 | ブラウザの印刷機能 |
-| デプロイ | 静的ホスティング |
+| デプロイ | GitHub Pages(GitHub Actions からビルドして公開) |
 
 サーバーサイドは持たない。
 
