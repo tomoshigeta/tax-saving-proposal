@@ -16,15 +16,28 @@ interface Schema extends DBSchema {
 }
 
 const DB_NAME = 'rent-assessment'
-const VERSION = 1
+const VERSION = 2
 
 let dbPromise: Promise<IDBPDatabase<Schema>> | null = null
 
 function db() {
   dbPromise ??= openDB<Schema>(DB_NAME, VERSION, {
-    upgrade(database) {
-      const store = database.createObjectStore('proposals', { keyPath: 'id' })
-      store.createIndex('updatedAt', 'updatedAt')
+    async upgrade(database, oldVersion, _newVersion, tx) {
+      if (oldVersion < 1) {
+        const store = database.createObjectStore('proposals', { keyPath: 'id' })
+        store.createIndex('updatedAt', 'updatedAt')
+      }
+      if (oldVersion === 1) {
+        // v1 は間取り図と外観写真の2枚。写真1枚に集約する
+        const store = tx.objectStore('proposals')
+        for (const row of await store.getAll()) {
+          const legacy = row as SavedProposal & { floorPlan?: Blob | null; exterior?: Blob | null }
+          const photo = legacy.photo ?? legacy.exterior ?? legacy.floorPlan ?? null
+          delete legacy.floorPlan
+          delete legacy.exterior
+          await store.put({ ...legacy, photo })
+        }
+      }
     },
   })
   return dbPromise

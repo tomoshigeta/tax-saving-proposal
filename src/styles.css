@@ -71,7 +71,17 @@ h1, h2 { font-weight: 600; letter-spacing: 0.01em; }
 
 .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
 
+.toolbar-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 0 4px;
+  background: var(--border);
+}
+
+a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+
 .banner {
+  white-space: pre-line;
   margin: 16px 20px 0;
   padding: 10px 14px;
   background: #e8f1fc;
@@ -198,17 +208,16 @@ legend { font-weight: 600; font-size: 13px; padding: 0 6px; color: var(--text-se
 .sheet-top { display: grid; grid-template-columns: 1fr 72mm; gap: 8mm; }
 .property-name { font-size: 18px; margin: 0 0 2px; }
 .property-address { margin: 0 0 6px; font-size: 12px; color: var(--text-secondary); }
-.property-images { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
-.property-images figure { margin: 0; }
-.property-images img {
+.property-photo { margin: 0; }
+.property-photo img {
   width: 100%;
-  height: 42mm;
+  height: 46mm;
   object-fit: cover;
   border: 1px solid var(--border);
   border-radius: 4px;
 }
 .image-placeholder {
-  height: 42mm;
+  height: 46mm;
   display: grid;
   place-items: center;
   border: 1px dashed var(--border-strong);

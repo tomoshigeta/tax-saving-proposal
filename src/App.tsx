@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { emptyInput } from './domain/defaults'
 import { deleteProposal, getProposal, listProposals, newId, putProposal } from './storage/db'
 import { downloadBlob, exportBackup, importBackup } from './storage/backup'
+import { ExcelFormatError, readExcelFile } from './storage/excelImport'
 import type { SavedProposal } from './storage/types'
 import { ListScreen } from './ui/ListScreen'
 import { EditScreen } from './ui/EditScreen'
@@ -12,8 +13,7 @@ type Screen = { name: 'list' } | { name: 'edit'; id: string } | { name: 'preview
 const blankProposal = (): SavedProposal => ({
   id: newId(),
   input: emptyInput(),
-  floorPlan: null,
-  exterior: null,
+  photo: null,
   createdAt: Date.now(),
   updatedAt: Date.now(),
 })
@@ -35,7 +35,8 @@ export function App() {
 
   const notify = (text: string) => {
     setMessage(text)
-    window.setTimeout(() => setMessage(null), 4000)
+    // 取り込み結果は行ごとの指摘を含むので、短い通知より長く出す
+    window.setTimeout(() => setMessage(null), text.includes('\n') ? 30_000 : 4000)
   }
 
   const save = useCallback(
@@ -102,6 +103,34 @@ export function App() {
     notify('バックアップを書き出しました')
   }
 
+  const doImportExcel = async (file: File) => {
+    try {
+      const { inputs, problems } = await readExcelFile(file)
+      const now = Date.now()
+      for (const [i, input] of inputs.entries()) {
+        await putProposal({
+          id: newId(),
+          input,
+          photo: null,
+          // 並び順が入力した順になるよう、行の順で1msずつずらす
+          createdAt: now + i,
+          updatedAt: now + i,
+        })
+      }
+      await refresh()
+
+      const head = inputs.length > 0 ? `${inputs.length}件を取り込みました。` : '取り込めた行がありません。'
+      const detail = problems.map((p) => `${p.row}行目: ${p.message}`).join('\n')
+      notify(problems.length > 0 ? `${head}\n取り込めなかった行:\n${detail}` : head)
+    } catch (error) {
+      notify(
+        error instanceof ExcelFormatError
+          ? error.message
+          : 'このファイルは読み込めませんでした。テンプレートの形式か確認してください。',
+      )
+    }
+  }
+
   const doImport = async (file: File) => {
     try {
       const count = await importBackup(await file.text())
@@ -122,6 +151,7 @@ export function App() {
         onDelete={(id) => void remove(id)}
         onExport={() => void doExport()}
         onImport={(file) => void doImport(file)}
+        onImportExcel={(file) => void doImportExcel(file)}
         message={message}
       />
     )

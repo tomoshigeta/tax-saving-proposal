@@ -11,9 +11,8 @@ import type { SavedProposal } from './types'
 const FORMAT = 'rent-assessment-backup'
 const FORMAT_VERSION = 1
 
-interface BackupProposal extends Omit<SavedProposal, 'floorPlan' | 'exterior'> {
-  floorPlan: string | null
-  exterior: string | null
+interface BackupProposal extends Omit<SavedProposal, 'photo'> {
+  photo: string | null
 }
 
 interface Backup {
@@ -32,8 +31,7 @@ export async function exportBackup(): Promise<Blob> {
     proposals: await Promise.all(
       proposals.map(async (p) => ({
         ...p,
-        floorPlan: p.floorPlan ? await blobToDataUrl(p.floorPlan) : null,
-        exterior: p.exterior ? await blobToDataUrl(p.exterior) : null,
+        photo: p.photo ? await blobToDataUrl(p.photo) : null,
       })),
     ),
   }
@@ -56,8 +54,7 @@ export async function importBackup(text: string): Promise<number> {
   for (const p of backup.proposals) {
     await putProposal({
       ...p,
-      floorPlan: p.floorPlan ? await dataUrlToBlob(p.floorPlan) : null,
-      exterior: p.exterior ? await dataUrlToBlob(p.exterior) : null,
+      photo: p.photo ? await dataUrlToBlob(p.photo) : null,
     })
   }
   return backup.proposals.length

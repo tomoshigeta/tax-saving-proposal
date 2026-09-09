@@ -1,0 +1,33 @@
+{
+  "sheetName": "物件データ",
+  "firstDataRow": 3,
+  "structureLabels": [
+    "木造・合成樹脂造",
+    "木骨モルタル造",
+    "鉄骨造(骨格材3mm以下)",
+    "鉄骨造(3mm超4mm以下)",
+    "鉄骨造(4mm超)",
+    "RC造"
+  ],
+  "taxRates": [33, 40, 45],
+  "columns": [
+    { "header": "物件名", "required": true, "kind": "text", "example": "グランドメゾン新宿 101", "width": 24 },
+    { "header": "顧客名", "required": false, "kind": "text", "example": "山田 太郎", "width": 14 },
+    { "header": "住所", "required": true, "kind": "text", "example": "東京都新宿区西新宿1-1-1", "width": 26 },
+    { "header": "物件価格", "required": true, "kind": "yen", "example": 30000000, "width": 14 },
+    { "header": "建物価格", "required": true, "kind": "yen", "example": 12000000, "width": 14 },
+    { "header": "うち設備価格", "required": false, "kind": "yen", "example": 2400000, "width": 14 },
+    { "header": "構造", "required": true, "kind": "structure", "example": "RC造", "width": 22 },
+    { "header": "築年数", "required": true, "kind": "years", "example": 20, "width": 9 },
+    { "header": "自己資金", "required": true, "kind": "yen", "example": 0, "width": 14 },
+    { "header": "ローン金利(%)", "required": true, "kind": "percent", "example": 2, "width": 13 },
+    { "header": "返済期間(年)", "required": true, "kind": "years", "example": 35, "width": 12 },
+    { "header": "仲介手数料", "required": false, "kind": "yen", "example": 990000, "width": 14 },
+    { "header": "ローン事務手数料", "required": false, "kind": "yen", "example": 110000, "width": 16 },
+    { "header": "保証月額家賃", "required": true, "kind": "yen", "example": 95000, "width": 14 },
+    { "header": "管理費・修繕積立金(月額)", "required": true, "kind": "yen", "example": 15000, "width": 22 },
+    { "header": "固定資産税・都市計画税(年額)", "required": true, "kind": "yen", "example": 80000, "width": 24 },
+    { "header": "現在年齢", "required": true, "kind": "years", "example": 50, "width": 10 },
+    { "header": "所得税率(%)", "required": true, "kind": "taxRate", "example": 33, "width": 12 }
+  ]
+}

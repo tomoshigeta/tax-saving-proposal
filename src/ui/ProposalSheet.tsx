@@ -14,8 +14,7 @@ interface Props {
 
 export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
   const { input } = proposal
-  const floorPlan = useObjectUrl(proposal.floorPlan)
-  const exterior = useObjectUrl(proposal.exterior)
+  const photo = useObjectUrl(proposal.photo)
 
   const years = sim.rows.map((r) => r.year)
 
@@ -26,22 +25,13 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
           <div className="sheet-property">
             <h1 className="property-name">{input.propertyName || '(物件名未入力)'}</h1>
             <p className="property-address">{input.address}</p>
-            <div className="property-images">
-              <figure>
-                {floorPlan ? (
-                  <img src={floorPlan} alt="間取り図" />
-                ) : (
-                  <div className="image-placeholder">間取り図</div>
-                )}
-              </figure>
-              <figure>
-                {exterior ? (
-                  <img src={exterior} alt="外観写真" />
-                ) : (
-                  <div className="image-placeholder">外観写真</div>
-                )}
-              </figure>
-            </div>
+            <figure className="property-photo">
+              {photo ? (
+                <img src={photo} alt={input.propertyName} />
+              ) : (
+                <div className="image-placeholder">写真</div>
+              )}
+            </figure>
           </div>
 
           <dl className="sheet-facts">

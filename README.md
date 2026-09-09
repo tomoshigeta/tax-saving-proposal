@@ -13,6 +13,7 @@ npm run dev        # 開発サーバー
 npm test           # 計算エンジンのテスト
 npm run typecheck
 npm run build      # dist/ に静的ファイルを出力
+npm run template   # Excel入力テンプレートを再生成 (openpyxl が必要)
 ```
 
 サーバーサイドはなく、成果物は静的ファイルのみ。提案履歴は各利用者のブラウザの
@@ -28,7 +29,9 @@ src/domain/     計算エンジン(UIから独立、テストあり)
   loan.ts         元利均等返済、土地対応借入の建物優先充当
   simulate.ts     提案書の全数値を1回で算出する入口
   validate.ts     入力の整合性チェック
-src/storage/    IndexedDB と JSON バックアップ
+src/storage/    IndexedDB / JSONバックアップ / Excel取り込み
+  excelColumns.json  Excelの列定義。テンプレート生成と取り込みの唯一の正
+  excelImport.ts     テンプレートの読み取り
 src/ui/         3画面(一覧 / 入力 / プレビュー)と提案書レイアウト
 ```
 

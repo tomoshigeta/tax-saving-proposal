@@ -7,6 +7,7 @@ import { dateText, signedYenText, yenText } from './format'
 interface Props {
   proposals: SavedProposal[]
   onCreate: () => void
+  onImportExcel: (file: File) => void
   onOpen: (id: string) => void
   onDuplicate: (id: string) => void
   onDelete: (id: string) => void
@@ -18,6 +19,7 @@ interface Props {
 export function ListScreen({
   proposals,
   onCreate,
+  onImportExcel,
   onOpen,
   onDuplicate,
   onDelete,
@@ -25,25 +27,48 @@ export function ListScreen({
   onImport,
   message,
 }: Props) {
-  const fileRef = useRef<HTMLInputElement>(null)
+  const backupRef = useRef<HTMLInputElement>(null)
+  const excelRef = useRef<HTMLInputElement>(null)
 
   return (
     <div className="list">
       <header className="toolbar">
         <h1>提案書一覧</h1>
         <div className="toolbar-actions">
+          <a className="btn btn-quiet" href={`${import.meta.env.BASE_URL}rent-assessment-template.xlsx`} download>
+            Excelテンプレート
+          </a>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => excelRef.current?.click()}
+          >
+            Excelから取り込み
+          </button>
+          <input
+            ref={excelRef}
+            type="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) onImportExcel(file)
+              e.target.value = ''
+            }}
+          />
+          <span className="toolbar-divider" aria-hidden="true" />
           <button type="button" className="btn btn-quiet" onClick={onExport}>
-            JSONエクスポート
+            バックアップ書き出し
           </button>
           <button
             type="button"
             className="btn btn-quiet"
-            onClick={() => fileRef.current?.click()}
+            onClick={() => backupRef.current?.click()}
           >
-            JSONインポート
+            バックアップ取り込み
           </button>
           <input
-            ref={fileRef}
+            ref={backupRef}
             type="file"
             accept="application/json"
             hidden
@@ -63,7 +88,8 @@ export function ListScreen({
 
       {proposals.length === 0 ? (
         <p className="empty">
-          まだ提案書がありません。「新規作成」から物件情報を入力してください。
+          まだ提案書がありません。「新規作成」から入力するか、Excelテンプレートに
+          まとめて書いてから「Excelから取り込み」を押してください。
         </p>
       ) : (
         <ul className="cards">

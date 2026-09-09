@@ -33,14 +33,13 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
   const errorFor = (field: keyof ProposalInput) => errors.find((e) => e.field === field)?.message
   const sim = useMemo(() => (errors.length === 0 ? simulate(input) : null), [input, errors])
 
-  const floorPlanUrl = useObjectUrl(proposal.floorPlan)
-  const exteriorUrl = useObjectUrl(proposal.exterior)
+  const photoUrl = useObjectUrl(proposal.photo)
 
-  const pickImage = async (key: 'floorPlan' | 'exterior', file: File) => {
+  const pickPhoto = async (file: File) => {
     setImageError(null)
     try {
       const blob = await normalizeImage(file)
-      onChange((prev) => ({ ...prev, [key]: blob }))
+      onChange((prev) => ({ ...prev, photo: blob }))
     } catch {
       setImageError('この画像は読み込めませんでした。別のファイルを試してください。')
     }
@@ -94,16 +93,10 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
             />
 
             <ImageField
-              label="間取り図"
-              url={floorPlanUrl}
-              onPick={(f) => void pickImage('floorPlan', f)}
-              onClear={() => onChange((prev) => ({ ...prev, floorPlan: null }))}
-            />
-            <ImageField
-              label="外観写真"
-              url={exteriorUrl}
-              onPick={(f) => void pickImage('exterior', f)}
-              onClear={() => onChange((prev) => ({ ...prev, exterior: null }))}
+              label="写真(室内または外観)"
+              url={photoUrl}
+              onPick={(f) => void pickPhoto(f)}
+              onClear={() => onChange((prev) => ({ ...prev, photo: null }))}
             />
             {imageError && <p className="form-error">{imageError}</p>}
 
