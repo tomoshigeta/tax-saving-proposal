@@ -67,8 +67,6 @@ export interface YearRow {
   /** 通算可能な赤字 x 合計税率。黒字年は 0 */
   taxSaving: YenPerYear
   loanBalanceEnd: Yen
-  /** 定年までの期間に含まれるか(節税効果合計の集計対象) */
-  countsTowardTotal: boolean
 }
 
 export interface Simulation {
@@ -87,9 +85,8 @@ export interface Simulation {
   fixturesBasis: Yen
   landInterestRatio: Rate
   combinedTaxRate: Rate
+  /** 試算期間。現在年齢から定年年齢まで。rows.length に一致する */
   yearsToRetirement: number
-  /** グラフ横軸の年数。max(定年まで, 返済期間) */
-  horizonYears: number
   /** 定年までの節税額合計 */
   totalTaxSaving: Yen
   rows: YearRow[]

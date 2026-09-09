@@ -45,15 +45,25 @@ describe('simulate', () => {
     expect(s.monthlyCashFlow).toBe(-26_045)
   })
 
-  it('グラフ期間は max(定年まで, 返済期間)', () => {
+  it('試算期間は定年まで。返済期間が長くても定年で打ち切る', () => {
     const s = simulate(baseInput)
     expect(s.yearsToRetirement).toBe(20)
-    expect(s.horizonYears).toBe(35) // 返済期間の方が長い
-    expect(s.rows).toHaveLength(35)
+    expect(s.rows).toHaveLength(20)
+    expect(s.rows.at(-1)!.age).toBe(65)
+  })
 
-    // 定年までの方が長いケース
-    const longer = simulate({ ...baseInput, currentAge: 30, loanTermYears: 20 })
-    expect(longer.horizonYears).toBe(35)
+  it('返済期間が定年より短ければ、完済後の年は残債0で続く', () => {
+    const s = simulate({ ...baseInput, loanTermYears: 10 })
+    expect(s.rows).toHaveLength(20)
+    expect(s.rows[9]!.loanBalanceEnd).toBe(0)
+    expect(s.rows[15]!.interestPaid).toBe(0)
+    expect(s.rows[15]!.loanBalanceEnd).toBe(0)
+  })
+
+  it('定年時点のローン残債が最終行に出る(定年時売却の前提)', () => {
+    const s = simulate(baseInput)
+    // 3,000万 / 2% / 35年 を20年返済した時点の残債
+    expect(s.rows.at(-1)!.loanBalanceEnd).toBeCloseTo(15_443_276, -2)
   })
 
   it('土地対応の借入割合を建物優先充当で出す', () => {
@@ -111,39 +121,25 @@ describe('simulate', () => {
     expect(s.rows[3]!.depreciation).toBe(319_896) // 4年目は本体のみ
   })
 
-  it('償却終了後に黒字化した年の節税額は0(増税として表示しない)', () => {
+  it('黒字化した年の節税額は0(増税として表示しない)', () => {
     const s = simulate(baseInput)
-    const afterShell = s.rows[31]! // 32年目、本体31年の償却が終わっている
-    expect(afterShell.depreciation).toBe(0)
-    expect(afterShell.realEstateIncome).toBeGreaterThan(0)
-    expect(afterShell.taxSaving).toBe(0)
-    expect(afterShell.deductibleLoss).toBe(0)
+    const blackYear = s.rows[5]! // 設備償却が3年で終わり、4年目以降は黒字
+    expect(blackYear.realEstateIncome).toBeGreaterThan(0)
+    expect(blackYear.taxSaving).toBe(0)
+    expect(blackYear.deductibleLoss).toBe(0)
   })
 
-  it('節税効果合計は定年までの年だけを集計する', () => {
+  it('節税効果合計は試算期間(定年まで)の全年を集計する', () => {
     const s = simulate(baseInput)
-    const upToRetirement = s.rows
-      .filter((r) => r.countsTowardTotal)
-      .reduce((sum, r) => sum + Math.trunc(r.taxSaving), 0)
-
-    expect(s.rows.filter((r) => r.countsTowardTotal)).toHaveLength(20)
-    expect(s.totalTaxSaving).toBe(Math.trunc(upToRetirement))
+    const summed = s.rows.reduce((sum, r) => sum + Math.trunc(r.taxSaving), 0)
+    expect(s.totalTaxSaving).toBe(Math.trunc(summed))
   })
 
-  it('定年より後の年に節税額が出ても合計には含めない', () => {
-    // 建物比率が高く償却が厚い物件は、定年後まで赤字が続く
-    const s = simulate({
-      ...baseInput,
-      buildingPrice: yen(24_000_000),
-      fixturesPrice: yen(4_800_000),
-      guaranteedRentMonthly: perMonth(80_000),
-    })
-
-    const afterRetirement = s.rows.filter((r) => !r.countsTowardTotal)
-    expect(afterRetirement.some((r) => r.taxSaving > 0)).toBe(true)
-
-    const all = s.rows.reduce((sum, r) => sum + Math.trunc(r.taxSaving), 0)
-    expect(s.totalTaxSaving).toBeLessThan(all)
+  it('定年までが短いほど節税効果合計は小さくなる', () => {
+    const until65 = simulate(baseInput)
+    const until50 = simulate({ ...baseInput, retirementAge: 50 })
+    expect(until50.rows).toHaveLength(5)
+    expect(until50.totalTaxSaving).toBeLessThanOrEqual(until65.totalTaxSaving)
   })
 
   it('赤字が消える年より後は節税額が0で並ぶ', () => {

@@ -96,21 +96,13 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
           <figure className="chart-figure">
             <figcaption>年間節税額の推移</figcaption>
             <div className="chart-box">
-              <TaxSavingChart
-                years={years}
-                values={sim.rows.map((r) => r.taxSaving)}
-                yearsToRetirement={sim.yearsToRetirement}
-              />
+              <TaxSavingChart years={years} values={sim.rows.map((r) => r.taxSaving)} />
             </div>
           </figure>
           <figure className="chart-figure">
             <figcaption>ローン残債の推移</figcaption>
             <div className="chart-box">
-              <LoanBalanceChart
-                years={years}
-                values={sim.rows.map((r) => r.loanBalanceEnd)}
-                yearsToRetirement={sim.yearsToRetirement}
-              />
+              <LoanBalanceChart years={years} values={sim.rows.map((r) => r.loanBalanceEnd)} />
             </div>
           </figure>
         </div>
@@ -156,7 +148,7 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
             </thead>
             <tbody>
               {sim.rows.map((r) => (
-                <tr key={r.year} className={r.countsTowardTotal ? '' : 'is-after-retirement'}>
+                <tr key={r.year}>
                   <td>{r.year}</td>
                   <td>{r.age}</td>
                   <td>{yenText(r.rentIncome)}</td>
@@ -173,7 +165,8 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
             </tbody>
           </table>
           <p className="schedule-note">
-            網掛けの行は定年より後の年です。節税効果合計には含みません。
+            現在年齢 {input.currentAge}歳 から定年 {input.retirementAge}歳 までの{' '}
+            {sim.yearsToRetirement}年間を試算しています。
           </p>
         </section>
       )}

@@ -29,8 +29,9 @@ export function simulate(input: ProposalInput): Simulation {
   const landPrice = y(input.price - input.buildingPrice)
   const loanPrincipal = y(Math.max(0, input.price - input.ownFunds))
 
-  const yearsToRetirement = Math.max(0, input.retirementAge - input.currentAge)
-  const horizonYears = Math.max(yearsToRetirement, Math.round(input.loanTermYears), 1)
+  // 提案の対象期間は定年まで。給与所得があるうちしか節税は効かず、
+  // 定年時に売却する前提のため、ローン残債も定年時点までしか描かない。
+  const yearsToRetirement = Math.max(1, input.retirementAge - input.currentAge)
 
   // --- 耐用年数 ---
   const statutory = STRUCTURES[input.structure].usefulLife
@@ -47,7 +48,7 @@ export function simulate(input: ProposalInput): Simulation {
   })
 
   // --- ローン ---
-  const schedule = amortize(loanPrincipal, input.interestRate, input.loanTermYears, horizonYears)
+  const schedule = amortize(loanPrincipal, input.interestRate, input.loanTermYears, yearsToRetirement)
   const landRatio = landInterestRatio(loanPrincipal, input.buildingPrice)
 
   // --- 月々CF (全期間一定) ---
@@ -68,7 +69,7 @@ export function simulate(input: ProposalInput): Simulation {
   const rows: YearRow[] = []
   let totalTaxSaving = 0
 
-  for (let year = 1; year <= horizonYears; year++) {
+  for (let year = 1; year <= yearsToRetirement; year++) {
     const loanYear = schedule.years[year - 1]
     const interestPaid = loanYear ? loanYear.interest : 0
     const balanceEnd = loanYear ? loanYear.balanceEnd : 0
@@ -91,8 +92,7 @@ export function simulate(input: ProposalInput): Simulation {
     const deductibleLoss = Math.max(0, -realEstateIncome - landInterest)
     const taxSaving = deductibleLoss * combinedTaxRate
 
-    const countsTowardTotal = year <= yearsToRetirement
-    if (countsTowardTotal) totalTaxSaving += floorYen(taxSaving)
+    totalTaxSaving += floorYen(taxSaving)
 
     rows.push({
       year,
@@ -106,7 +106,6 @@ export function simulate(input: ProposalInput): Simulation {
       deductibleLoss: py(deductibleLoss),
       taxSaving: py(taxSaving),
       loanBalanceEnd: y(balanceEnd),
-      countsTowardTotal,
     })
   }
 
@@ -123,7 +122,6 @@ export function simulate(input: ProposalInput): Simulation {
     landInterestRatio: rate(landRatio) as Rate,
     combinedTaxRate,
     yearsToRetirement,
-    horizonYears,
     totalTaxSaving: y(totalTaxSaving),
     rows,
   }

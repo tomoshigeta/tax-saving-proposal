@@ -10,9 +10,7 @@ import {
   LinearScale,
   PointElement,
   Tooltip,
-  type Chart as ChartType,
   type ChartConfiguration,
-  type Plugin,
 } from 'chart.js'
 import { VIZ } from './theme'
 
@@ -28,41 +26,14 @@ Chart.register(
   Filler,
 )
 
-/** 定年の時点に点線とラベルを引く。データではなく注記なので系列色を使わない */
-const retirementLine = (yearsToRetirement: number): Plugin<'bar' | 'line'> => ({
-  id: 'retirementLine',
-  afterDatasetsDraw(chart: ChartType) {
-    const x = chart.scales.x
-    const y = chart.scales.y
-    if (!x || !y || yearsToRetirement <= 0) return
-
-    const px = x.getPixelForValue(yearsToRetirement - 1)
-    if (!Number.isFinite(px)) return
-
-    const { ctx } = chart
-    ctx.save()
-    ctx.beginPath()
-    ctx.setLineDash([3, 3])
-    ctx.lineWidth = 1
-    ctx.strokeStyle = VIZ.textMuted
-    ctx.moveTo(px, y.top)
-    ctx.lineTo(px, y.bottom)
-    ctx.stroke()
-
-    ctx.setLineDash([])
-    ctx.fillStyle = VIZ.textSecondary
-    ctx.font = '10px system-ui, sans-serif'
-    ctx.textAlign = px > (x.left + x.right) / 2 ? 'right' : 'left'
-    ctx.fillText('定年', px + (px > (x.left + x.right) / 2 ? -4 : 4), y.top + 10)
-    ctx.restore()
-  },
-})
-
 const axisText = { color: VIZ.textSecondary, font: { size: 10 } }
 const nf = new Intl.NumberFormat('ja-JP')
 const manTick = (v: number) => (v === 0 ? '0' : `${nf.format(Math.round(v / 10_000))}万`)
 
-/** 両グラフで横軸(年)を揃えるための共通設定 */
+/**
+ * 両グラフで横軸(年)を揃えるための共通設定。
+ * 横軸は定年で終わるので、最終目盛りに「定年」を添える。
+ */
 const sharedX = (labels: number[]) => ({
   type: 'category' as const,
   grid: { display: false },
@@ -73,9 +44,13 @@ const sharedX = (labels: number[]) => ({
     autoSkip: false,
     maxRotation: 0,
     callback(this: unknown, index: string | number) {
-      const year = labels[Number(index)]
-      // 5年刻みと初年度だけラベルを出す
-      return year !== undefined && (year === 1 || year % 5 === 0) ? `${year}年` : ''
+      const i = Number(index)
+      const year = labels[i]
+      if (year === undefined) return ''
+      if (i === labels.length - 1) return `${year}年(定年)`
+      // 5年刻みと初年度だけラベルを出す。最終目盛りと重なる位置は空ける
+      const isLandmark = year === 1 || year % 5 === 0
+      return isLandmark && i < labels.length - 2 ? `${year}年` : ''
     },
   },
 })
@@ -106,11 +81,10 @@ function useChart(config: ChartConfiguration) {
 interface Props {
   years: number[]
   values: number[]
-  yearsToRetirement: number
 }
 
 /** 年間節税額の推移。単一系列なので凡例は置かず、見出しが系列名を兼ねる */
-export function TaxSavingChart({ years, values, yearsToRetirement }: Props) {
+export function TaxSavingChart({ years, values }: Props) {
   const ref = useChart({
     type: 'bar',
     data: {
@@ -140,14 +114,13 @@ export function TaxSavingChart({ years, values, yearsToRetirement }: Props) {
         },
       },
     },
-    plugins: [retirementLine(yearsToRetirement)],
   })
 
   return <canvas ref={ref} aria-label="年間節税額の推移" role="img" />
 }
 
 /** ローン残債の推移 */
-export function LoanBalanceChart({ years, values, yearsToRetirement }: Props) {
+export function LoanBalanceChart({ years, values }: Props) {
   const ref = useChart({
     type: 'line',
     data: {
@@ -186,7 +159,6 @@ export function LoanBalanceChart({ years, values, yearsToRetirement }: Props) {
         },
       },
     },
-    plugins: [retirementLine(yearsToRetirement)],
   })
 
   return <canvas ref={ref} aria-label="ローン残債の推移" role="img" />

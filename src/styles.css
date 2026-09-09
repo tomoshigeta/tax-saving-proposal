@@ -265,7 +265,6 @@ legend { font-weight: 600; font-size: 13px; padding: 0 6px; color: var(--text-se
 .schedule th, .schedule td { padding: 3px 4px; text-align: right; border-bottom: 1px solid var(--border); }
 .schedule th { color: var(--text-secondary); font-weight: 600; white-space: nowrap; border-bottom: 1px solid var(--border-strong); }
 .schedule td:first-child, .schedule td:nth-child(2) { text-align: center; }
-.schedule .is-after-retirement { background: #f4f3f0; color: var(--text-secondary); }
 .schedule-note { font-size: 10px; color: var(--text-muted); margin-top: 4mm; }
 
 /* ---------- 印刷 ---------- */
