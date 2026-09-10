@@ -108,7 +108,13 @@ export interface Simulation {
   simulationYears: number
   /** 試算期間の節税額合計 */
   totalTaxSaving: Yen
+  /** 試算期間(N年)の年次。節税額グラフと節税効果合計の元 */
   rows: YearRow[]
+  /**
+   * 年次明細(2枚目)用。返済期間の全年(1年目〜完済年)で、残債が0になるまでの
+   * 不動産所得を追える。試算期間より長くても短くても返済期間で切る。
+   */
+  scheduleRows: YearRow[]
   /**
    * 返済期間の全年の年末残債(1年目〜完済年)。残債グラフ専用で、試算期間とは独立に
    * 必ず 0 に着地する。年次明細(rows)は試算期間で打ち切る。

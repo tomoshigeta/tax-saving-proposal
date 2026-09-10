@@ -41,7 +41,7 @@ src/ui/         4画面(一覧 / 入力 / プレビュー / 使い方)と提案�
 typecheck → test → build を通したうえで GitHub Pages に公開する
 (`.github/workflows/deploy.yml`)。
 
-公開URL: `https://<owner>.github.io/rent-assessment/`
+公開URL: `https://tomoshigeta.github.io/tax-saving-proposal/`
 
 初回だけリポジトリ側の設定が必要:
 **Settings → Pages → Build and deployment → Source を「GitHub Actions」にする。**

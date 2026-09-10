@@ -100,7 +100,9 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
 
 .banner {
-  white-space: pre-line;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   margin: 16px 20px 0;
   padding: 10px 14px;
   background: var(--surface-accent);
@@ -108,6 +110,8 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   border-radius: var(--radius);
   font-size: 13px;
 }
+.banner-text { margin: 0; flex: 1; white-space: pre-line; }
+.banner-close { flex: none; }
 
 /* ---------- 一覧 ---------- */
 

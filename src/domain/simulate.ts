@@ -63,12 +63,9 @@ export function simulate(input: ProposalInput): Simulation {
   // 返済表は試算期間と返済期間の長い方まで回す。年次明細は試算期間で打ち切り、
   // 残債グラフは返済期間の全年(完済まで)を使う
   const loanTermYears = Math.max(0, Math.trunc(input.loanTermYears))
-  const schedule = amortize(
-    loanPrincipal,
-    input.interestRate,
-    input.loanTermYears,
-    Math.max(simulationYears, loanTermYears),
-  )
+  // 年次は試算期間と返済期間の長い方まで計算し、用途ごとに切り出す
+  const horizonYears = Math.max(simulationYears, loanTermYears)
+  const schedule = amortize(loanPrincipal, input.interestRate, input.loanTermYears, horizonYears)
   const loanBalanceSeries = schedule.years
     .slice(0, loanTermYears)
     .map((ly) => ({ year: ly.year, balanceEnd: y(ly.balanceEnd) }))
@@ -89,10 +86,10 @@ export function simulate(input: ProposalInput): Simulation {
 
   // --- 年次 ---
   const rentIncome = py(annualize(input.guaranteedRentMonthly))
-  const rows: YearRow[] = []
+  const allRows: YearRow[] = []
   let totalTaxSaving = 0
 
-  for (let year = 1; year <= simulationYears; year++) {
+  for (let year = 1; year <= horizonYears; year++) {
     const loanYear = schedule.years[year - 1]
     const interestPaid = loanYear ? loanYear.interest : 0
     const balanceEnd = loanYear ? loanYear.balanceEnd : 0
@@ -116,9 +113,10 @@ export function simulate(input: ProposalInput): Simulation {
     const deductibleLoss = Math.max(0, -realEstateIncome - landInterest)
     const taxSaving = deductibleLoss * combinedTaxRate
 
-    totalTaxSaving += floorYen(taxSaving)
+    // 節税効果合計は試算期間の分だけ
+    if (year <= simulationYears) totalTaxSaving += floorYen(taxSaving)
 
-    rows.push({
+    allRows.push({
       year,
       age: input.currentAge + year,
       rentIncome,
@@ -151,7 +149,8 @@ export function simulate(input: ProposalInput): Simulation {
     combinedTaxRate,
     simulationYears,
     totalTaxSaving: y(totalTaxSaving),
-    rows,
+    rows: allRows.slice(0, simulationYears),
+    scheduleRows: allRows.slice(0, loanTermYears),
     loanBalanceSeries,
   }
 }

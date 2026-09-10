@@ -147,12 +147,11 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
                 <th>その他経費</th>
                 <th>不動産所得</th>
                 <th>通算可能な赤字</th>
-                <th>年間節税額</th>
                 <th>ローン残債</th>
               </tr>
             </thead>
             <tbody>
-              {sim.rows.map((r) => (
+              {sim.scheduleRows.map((r) => (
                 <tr key={r.year}>
                   <td>{r.year}</td>
                   <td>{r.age}</td>
@@ -163,13 +162,16 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
                   <td>{yenText(r.otherExpenses)}</td>
                   <td>{signedYenText(r.realEstateIncome)}</td>
                   <td>{yenText(r.deductibleLoss)}</td>
-                  <td>{yenText(r.taxSaving)}</td>
                   <td>{yenText(r.loanBalanceEnd)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="schedule-note">購入から {sim.simulationYears}年間 を試算しています。</p>
+          <p className="schedule-note">
+            ローン返済期間 {input.loanTermYears}年分(完済まで)を表示しています。
+            1枚目の節税効果 合計は購入から {sim.simulationYears}年間 の年間節税額
+            (通算可能な赤字 × {taxRate}%)を集計したものです。
+          </p>
 
           <CalculationBasis input={input} sim={sim} />
         </section>

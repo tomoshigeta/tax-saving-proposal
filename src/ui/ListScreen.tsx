@@ -15,6 +15,7 @@ interface Props {
   onExport: () => void
   onImport: (file: File) => void
   message: string | null
+  onDismissMessage: () => void
 }
 
 export function ListScreen({
@@ -28,6 +29,7 @@ export function ListScreen({
   onExport,
   onImport,
   message,
+  onDismissMessage,
 }: Props) {
   const backupRef = useRef<HTMLInputElement>(null)
   const excelRef = useRef<HTMLInputElement>(null)
@@ -90,7 +92,14 @@ export function ListScreen({
         </div>
       </header>
 
-      {message && <p className="banner">{message}</p>}
+      {message && (
+        <div className="banner" role="status">
+          <p className="banner-text">{message}</p>
+          <button type="button" className="btn btn-quiet banner-close" onClick={onDismissMessage}>
+            閉じる
+          </button>
+        </div>
+      )}
 
       {proposals.length === 0 ? (
         <div className="empty">
