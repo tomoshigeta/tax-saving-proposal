@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - claude/plugins-mattpocock-skills-9lt5ok
   workflow_dispatch:
 
 permissions:
