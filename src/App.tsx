@@ -38,10 +38,16 @@ export function App() {
     void refresh()
   }, [refresh])
 
-  const notify = (text: string) => {
+  /**
+   * 画面上部の通知。
+   *
+   * 「保存しました」のような確認は数秒で消してよいが、取り込みの結果や失敗は
+   * 利用者が読むまで残す(sticky)。以前は失敗も4秒で消えていたため、
+   * 「ボタンを押したが何も起きない」ように見えていた。
+   */
+  const notify = (text: string, sticky = false) => {
     setMessage(text)
-    // 取り込み結果は行ごとの指摘を含むので、短い通知より長く出す
-    window.setTimeout(() => setMessage(null), text.includes('\n') ? 30_000 : 4000)
+    if (!sticky) window.setTimeout(() => setMessage(null), 4000)
   }
 
   const save = useCallback(
@@ -126,12 +132,14 @@ export function App() {
 
       const head = inputs.length > 0 ? `${inputs.length}件を取り込みました。` : '取り込めた行がありません。'
       const detail = problems.map((p) => `${p.row}行目: ${p.message}`).join('\n')
-      notify(problems.length > 0 ? `${head}\n取り込めなかった行:\n${detail}` : head)
+      notify(problems.length > 0 ? `${head}\n取り込めなかった行:\n${detail}` : head, true)
     } catch (error) {
       notify(
         error instanceof ExcelFormatError
           ? error.message
-          : 'このファイルは読み込めませんでした。テンプレートの形式か確認してください。',
+          : 'このファイルは読み込めませんでした。テンプレートの形式か確認してください。' +
+              '\n公開直後はページが古いままのことがあります。ページを再読み込みしてからもう一度お試しください。',
+        true,
       )
     }
   }
@@ -140,9 +148,9 @@ export function App() {
     try {
       const count = await importBackup(await file.text())
       await refresh()
-      notify(`${count}件を取り込みました`)
+      notify(`${count}件を取り込みました`, true)
     } catch (error) {
-      notify(error instanceof Error ? error.message : '取り込みに失敗しました')
+      notify(error instanceof Error ? error.message : '取り込みに失敗しました', true)
     }
   }
 
@@ -163,6 +171,7 @@ export function App() {
         onImport={(file) => void doImport(file)}
         onImportExcel={(file) => void doImportExcel(file)}
         message={message}
+        onDismissMessage={() => setMessage(null)}
       />
     )
   }
