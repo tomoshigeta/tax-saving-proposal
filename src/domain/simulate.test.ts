@@ -110,6 +110,26 @@ describe('simulate', () => {
     expect(s.rows).toHaveLength(15)
   })
 
+  it('年次明細の行は返済期間の全年で、最終行の残債は0', () => {
+    const s = simulate(baseInput) // 35年ローン、試算15年
+    expect(s.scheduleRows).toHaveLength(35)
+    expect(s.scheduleRows.at(-1)!.year).toBe(35)
+    expect(s.scheduleRows.at(-1)!.loanBalanceEnd).toBe(0)
+    // 試算期間内の行は rows と同じ
+    expect(s.scheduleRows.slice(0, 15)).toEqual(s.rows)
+    // 償却終了後は黒字が続く(残債0になるまでの不動産所得を追える)
+    expect(s.scheduleRows[34]!.realEstateIncome).toBeGreaterThan(0)
+  })
+
+  it('返済期間が試算期間より短ければ、年次明細は返済期間で切る', () => {
+    const s = simulate({ ...baseInput, loanTermYears: 10, simulationYears: 15 })
+    expect(s.scheduleRows).toHaveLength(10)
+    expect(s.rows).toHaveLength(15)
+    // 節税効果合計は試算期間15年分のまま
+    const summed = s.rows.reduce((sum, r) => sum + Math.trunc(r.taxSaving), 0)
+    expect(s.totalTaxSaving).toBe(summed)
+  })
+
   it('15年後のローン残債が最終行に出る', () => {
     const s = simulate(baseInput)
     // 3,000万 / 2% / 35年 を15年返済した時点の残債
