@@ -15,6 +15,8 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
   const { input } = proposal
   const photo = useObjectUrl(proposal.photo)
   const years = sim.rows.map((r) => r.year)
+  // 残債グラフは試算期間ではなく返済期間の全年。必ず0に着地させる
+  const loanYears = sim.loanBalanceSeries.map((b) => b.year)
   const taxRate = input.incomeTaxRatePercent + RESIDENT_TAX_PERCENT
 
   return (
@@ -100,10 +102,13 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
           <figure className="chart-card">
             <figcaption>
               <span className="rule-title">ローン残債の推移</span>
-              <span className="chart-unit">(万円)</span>
+              <span className="chart-unit">(万円 ・ 返済期間 {input.loanTermYears}年)</span>
             </figcaption>
             <div className="chart-box">
-              <LoanBalanceChart years={years} values={sim.rows.map((r) => r.loanBalanceEnd)} />
+              <LoanBalanceChart
+                years={loanYears}
+                values={sim.loanBalanceSeries.map((b) => b.balanceEnd)}
+              />
             </div>
           </figure>
         </div>

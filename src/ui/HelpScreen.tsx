@@ -102,7 +102,8 @@ export function HelpScreen({ onBack }: Props) {
               <dd>
                 節税効果を合計する年数です({MIN_SIMULATION_YEARS}〜{MAX_SIMULATION_YEARS}年、
                 空欄なら{DEFAULT_SIMULATION_YEARS}年)。「定年まであと3年」なら 3 と入れると、
-                1枚目の「3年間の節税効果 合計」、グラフの横軸、2枚目の明細がすべて3年分になります。
+                1枚目の「3年間の節税効果 合計」、節税額グラフの横軸、2枚目の明細が3年分になります
+                (ローン残債のグラフは返済期間の全期間のままです)。
               </dd>
             </div>
             <div>
@@ -137,7 +138,8 @@ export function HelpScreen({ onBack }: Props) {
           <ul className="help-assumptions">
             <li>
               <strong>試算期間は入力した年数</strong>(既定{DEFAULT_SIMULATION_YEARS}年)です。
-              ローンの返済期間より短ければ、残債グラフは0に着地せず期間末の残債で終わります
+              節税額のグラフと年次明細はこの年数で終わります。
+              <strong>ローン残債のグラフだけは返済期間の全期間</strong>を描き、必ず0で終わります
             </li>
             <li>
               <strong>家賃保証(サブリース)前提</strong>で、空室率と家賃下落は見ていません。

@@ -109,4 +109,9 @@ export interface Simulation {
   /** 試算期間の節税額合計 */
   totalTaxSaving: Yen
   rows: YearRow[]
+  /**
+   * 返済期間の全年の年末残債(1年目〜完済年)。残債グラフ専用で、試算期間とは独立に
+   * 必ず 0 に着地する。年次明細(rows)は試算期間で打ち切る。
+   */
+  loanBalanceSeries: { year: number; balanceEnd: Yen }[]
 }

@@ -60,7 +60,18 @@ export function simulate(input: ProposalInput): Simulation {
   })
 
   // --- ローン ---
-  const schedule = amortize(loanPrincipal, input.interestRate, input.loanTermYears, simulationYears)
+  // 返済表は試算期間と返済期間の長い方まで回す。年次明細は試算期間で打ち切り、
+  // 残債グラフは返済期間の全年(完済まで)を使う
+  const loanTermYears = Math.max(0, Math.trunc(input.loanTermYears))
+  const schedule = amortize(
+    loanPrincipal,
+    input.interestRate,
+    input.loanTermYears,
+    Math.max(simulationYears, loanTermYears),
+  )
+  const loanBalanceSeries = schedule.years
+    .slice(0, loanTermYears)
+    .map((ly) => ({ year: ly.year, balanceEnd: y(ly.balanceEnd) }))
   const landRatio = landInterestRatio(loanPrincipal, input.buildingPrice)
 
   // --- 月々CF (全期間一定) ---
@@ -141,5 +152,6 @@ export function simulate(input: ProposalInput): Simulation {
     simulationYears,
     totalTaxSaving: y(totalTaxSaving),
     rows,
+    loanBalanceSeries,
   }
 }
