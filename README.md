@@ -32,7 +32,7 @@ src/domain/     計算エンジン(UIから独立、テストあり)
 src/storage/    IndexedDB / JSONバックアップ / Excel取り込み
   excelColumns.json  Excelの列定義。テンプレート生成と取り込みの唯一の正
   excelImport.ts     テンプレートの読み取り
-src/ui/         4画面(一覧 / 入力 / プレビュー / 使い方)と提案書レイアウト
+src/ui/         4画面(一覧 / 入力 / プレビュー / 使い方)と提案書レイアウト(2枚目に年次明細と計算の根拠)
 ```
 
 ## デプロイ

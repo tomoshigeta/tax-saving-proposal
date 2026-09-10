@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import { withDefaults } from '../domain/defaults'
 import type { SavedProposal } from './types'
 
 /**
@@ -16,7 +17,7 @@ interface Schema extends DBSchema {
 }
 
 const DB_NAME = 'rent-assessment'
-const VERSION = 2
+const VERSION = 3
 
 let dbPromise: Promise<IDBPDatabase<Schema>> | null = null
 
@@ -27,15 +28,16 @@ function db() {
         const store = database.createObjectStore('proposals', { keyPath: 'id' })
         store.createIndex('updatedAt', 'updatedAt')
       }
-      if (oldVersion === 1) {
-        // v1 は間取り図と外観写真の2枚。写真1枚に集約する
+      if (oldVersion >= 1 && oldVersion < 3) {
         const store = tx.objectStore('proposals')
         for (const row of await store.getAll()) {
           const legacy = row as SavedProposal & { floorPlan?: Blob | null; exterior?: Blob | null }
+          // v1 は間取り図と外観写真の2枚。写真1枚に集約する
           const photo = legacy.photo ?? legacy.exterior ?? legacy.floorPlan ?? null
           delete legacy.floorPlan
           delete legacy.exterior
-          await store.put({ ...legacy, photo })
+          // v3 で登記費用と試算期間が増えた。既定値(0 / 15年)で埋めれば数字は変わらない
+          await store.put({ ...legacy, photo, input: withDefaults(legacy.input) })
         }
       }
     },

@@ -1,4 +1,10 @@
-import { INCOME_TAX_RATES, RESIDENT_TAX_PERCENT, SIMULATION_YEARS } from '../domain/types'
+import {
+  DEFAULT_SIMULATION_YEARS,
+  INCOME_TAX_RATES,
+  MAX_SIMULATION_YEARS,
+  MIN_SIMULATION_YEARS,
+  RESIDENT_TAX_PERCENT,
+} from '../domain/types'
 import { STRUCTURES, STRUCTURE_KEYS } from '../domain/structures'
 
 interface Props {
@@ -70,8 +76,12 @@ export function HelpScreen({ onBack }: Props) {
               </dd>
             </div>
             <div>
-              <dt>ローン事務手数料</dt>
-              <dd>手元から出ていき、かつ<strong>初年度の経費</strong>になります。</dd>
+              <dt>ローン事務手数料 / 登記費用</dt>
+              <dd>
+                どちらも手元から出ていき、かつ<strong>初年度の経費</strong>になります。
+                登記費用は登録免許税と司法書士報酬の合計です。提案書の「初期費用」は
+                仲介手数料・ローン事務手数料・登記費用の合計です(自己資金は含みません)。
+              </dd>
             </div>
             <div>
               <dt>管理費・修繕積立金</dt>
@@ -85,6 +95,14 @@ export function HelpScreen({ onBack }: Props) {
               <dt>現在年齢</dt>
               <dd>
                 2枚目の年齢欄にしか使いません。<strong>金額計算には影響しません。</strong>
+              </dd>
+            </div>
+            <div>
+              <dt>試算期間</dt>
+              <dd>
+                節税効果を合計する年数です({MIN_SIMULATION_YEARS}〜{MAX_SIMULATION_YEARS}年、
+                空欄なら{DEFAULT_SIMULATION_YEARS}年)。「定年まであと3年」なら 3 と入れると、
+                1枚目の「3年間の節税効果 合計」、グラフの横軸、2枚目の明細がすべて3年分になります。
               </dd>
             </div>
             <div>
@@ -105,8 +123,9 @@ export function HelpScreen({ onBack }: Props) {
           <ul>
             <li>1枚目はA4ちょうどに収まります</li>
             <li>
-              「2枚目に年次明細を付ける」を入れると、年ごとの内訳(賃料収入・減価償却費・支払利息・
-              不動産所得・節税額・残債)が2枚目に付きます。数字の根拠を聞かれたとき用です
+              2枚目には、年ごとの内訳(賃料収入・減価償却費・支払利息・不動産所得・節税額・残債)と
+              「計算の根拠」(月々のキャッシュフローの内訳、価格の按分と耐用年数)が付きます。
+              最初から付いた状態になっており、1枚目だけ出したいときはチェックを外します
             </li>
             <li>印刷設定の「背景のグラフィック」は<strong>オンのまま</strong>にしてください</li>
           </ul>
@@ -117,8 +136,8 @@ export function HelpScreen({ onBack }: Props) {
           <p>提案書の数字は、次の前提で計算しています。顧客に説明する前に確認してください。</p>
           <ul className="help-assumptions">
             <li>
-              <strong>試算期間は{SIMULATION_YEARS}年で固定</strong>です。顧客の年齢や定年時期、
-              ローンの返済期間には影響されません
+              <strong>試算期間は入力した年数</strong>(既定{DEFAULT_SIMULATION_YEARS}年)です。
+              ローンの返済期間より短ければ、残債グラフは0に着地せず期間末の残債で終わります
             </li>
             <li>
               <strong>家賃保証(サブリース)前提</strong>で、空室率と家賃下落は見ていません。

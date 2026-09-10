@@ -193,14 +193,15 @@ legend { font-weight: 700; font-size: 13px; padding: 0 6px; color: var(--navy); 
   gap: 5mm;
 }
 
+/* 見出し行は下の写真/カードと同じ2カラム。住所は右カラムの左端(=「物件条件」の左端)から始める */
 .sheet-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8mm;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5mm;
+  align-items: end;
 }
-.property-name { margin: 0; font-size: 22px; color: var(--navy); }
-.property-address { margin: 0; font-size: 11px; color: var(--text-secondary); }
+.property-name { margin: 0; font-size: 22px; color: var(--navy); overflow-wrap: anywhere; }
+.property-address { margin: 0; font-size: 11px; color: var(--text-secondary); align-self: end; }
 
 .sheet-top { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; align-items: stretch; }
 
@@ -309,6 +310,37 @@ legend { font-weight: 700; font-size: 13px; padding: 0 6px; color: var(--navy); 
 .schedule td:first-child, .schedule td:nth-child(2) { text-align: center; }
 .schedule-note { font-size: 10px; color: var(--text-muted); margin-top: 4mm; }
 
+/* 2枚目下段: 計算の根拠。見出しと枠を切り離さない。次ページに送られたときは
+   margin ではなく padding で上の余白を確保する(改ページ位置では margin が消えるため) */
+.basis { padding-top: 8mm; break-inside: avoid; page-break-inside: avoid; }
+.basis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; align-items: start; }
+.basis-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  break-inside: avoid;
+}
+.basis-card .card-bar { font-size: 11.5px; }
+.ledger {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.ledger th, .ledger td { padding: 2mm 4mm; border-bottom: 1px solid var(--border); vertical-align: baseline; }
+.ledger th { text-align: left; font-weight: 400; color: var(--text-secondary); white-space: nowrap; }
+.ledger td { text-align: right; font-weight: 700; color: var(--text-primary); }
+.ledger .indent-1 { padding-left: 8mm; }
+.ledger .indent-2 { padding-left: 12mm; }
+.ledger-total th { font-weight: 700; color: var(--navy); }
+.ledger-total td { color: var(--navy); }
+.ledger tbody tr.ledger-total:last-child th, .ledger tbody tr.ledger-total:last-child td { border-top: 1.5px solid var(--navy); }
+.ledger-sub { margin-left: 2mm; font-weight: 400; color: var(--text-muted); font-size: 9px; }
+.ledger-life { border-top: 1px solid var(--border); }
+.ledger-life .ledger-total th, .ledger-life .ledger-total td { border-top: 0; }
+.ledger-derivation { margin-right: 2mm; font-weight: 400; color: var(--text-muted); font-size: 9px; }
+.basis-note { margin: 0; padding: 2mm 4mm 2.5mm; font-size: 8.5px; line-height: 1.5; color: var(--text-muted); }
+
 /* ---------- 印刷 ---------- */
 
 @page { size: A4; margin: 0; }
@@ -322,6 +354,7 @@ legend { font-weight: 700; font-size: 13px; padding: 0 6px; color: var(--navy); 
   .schedule { break-inside: auto; }
   .schedule tr { break-inside: avoid; }
   .schedule thead { display: table-header-group; }
+  .basis { padding-top: 13mm; }
 }
 
 /* ---------- 使い方 ---------- */

@@ -9,7 +9,8 @@ interface Props {
 }
 
 export function PreviewScreen({ proposal, onBack }: Props) {
-  const [showSchedule, setShowSchedule] = useState(false)
+  // 2枚目には年次明細と計算の根拠が載る。付け忘れより外し忘れの方がましなので既定オン
+  const [showSchedule, setShowSchedule] = useState(true)
   const sim = useMemo(() => simulate(proposal.input), [proposal.input])
 
   return (
@@ -26,7 +27,7 @@ export function PreviewScreen({ proposal, onBack }: Props) {
               checked={showSchedule}
               onChange={(e) => setShowSchedule(e.target.checked)}
             />
-            2枚目に年次明細を付ける
+            2枚目(年次明細・計算の根拠)を付ける
           </label>
           <button type="button" className="btn btn-primary" onClick={() => window.print()}>
             印刷 / PDF出力

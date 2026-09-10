@@ -1,4 +1,4 @@
-import { STRUCTURES } from '../domain/structures'
+import { FIXTURES_USEFUL_LIFE, STRUCTURES, effectiveFixturesPrice } from '../domain/structures'
 import { RESIDENT_TAX_PERCENT, type Simulation } from '../domain/types'
 import type { SavedProposal } from '../storage/types'
 import { manText, signedYenText, yenText } from './format'
@@ -22,6 +22,7 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
       <section className="sheet" aria-label="提案書 1枚目">
         <header className="sheet-head">
           <h1 className="property-name">{input.propertyName || '(物件名未入力)'}</h1>
+          {/* 右カラムに置き、「物件条件」カードの左端に揃える。縦は物件名の下端に合わせる */}
           <p className="property-address">住所：{input.address}</p>
         </header>
 
@@ -49,6 +50,10 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
                 <div>
                   <dt>借入額</dt>
                   <dd>{manText(sim.loanPrincipal)}</dd>
+                </div>
+                <div>
+                  <dt>初期費用</dt>
+                  <dd>{manText(sim.initialCosts)}</dd>
                 </div>
                 <div>
                   <dt>ローン条件</dt>
@@ -160,8 +165,153 @@ export function ProposalSheet({ proposal, sim, showSchedule }: Props) {
             </tbody>
           </table>
           <p className="schedule-note">購入から {sim.simulationYears}年間 を試算しています。</p>
+
+          <CalculationBasis input={input} sim={sim} />
         </section>
       )}
     </>
+  )
+}
+
+/**
+ * 2枚目の下段「計算の根拠」。
+ *
+ * 左: 月々のキャッシュフローの内訳(縦の内訳表)
+ * 右: 価格の内訳(土地 / 建物 / 建物本体・設備の按分)と耐用年数の導出
+ *
+ * 1枚目の数字が「何から出てきたか」を、明細表のすぐ下で辿れるようにする。
+ */
+function CalculationBasis({ input, sim }: { input: SavedProposal['input']; sim: Simulation }) {
+  const structure = STRUCTURES[input.structure]
+  const fixturesPrice = effectiveFixturesPrice(input.structure, input.fixturesPrice)
+  const shellPrice = input.buildingPrice - fixturesPrice
+  const hasFixtures = sim.fixturesUsefulLife !== null && fixturesPrice > 0
+  const fixturesPercent =
+    input.buildingPrice > 0 ? Math.round((fixturesPrice / input.buildingPrice) * 100) : 0
+  const shellPercent = 100 - fixturesPercent
+
+  // 月々CFはエンジン側で「賃料 − 管理費 − 返済額(端数あり) − 固都税/12(端数あり)」を
+  // 最後に切り捨てている。各行を切り捨てて並べると合計が1〜2円ずれるので、
+  // 固都税の行を差額で出して、内訳の足し算が答えと必ず一致するようにする。
+  const propertyTaxLine =
+    input.guaranteedRentMonthly -
+    sim.monthlyPayment -
+    input.managementFeeMonthly -
+    sim.monthlyCashFlow
+
+  const lifeText = (statutory: number) =>
+    input.ageYears > 0
+      ? `法定${statutory}年 ・ 築${input.ageYears}年 → 簡便法`
+      : `法定${statutory}年(新築)`
+
+  return (
+    <section className="basis" aria-label="計算の根拠">
+      <h2 className="rule-title">計算の根拠</h2>
+      <div className="basis-grid">
+        <div className="basis-card">
+          <h3 className="card-bar">月々のキャッシュフローの内訳</h3>
+          <table className="ledger">
+            <tbody>
+              <tr>
+                <th>保証賃料</th>
+                <td>{yenText(input.guaranteedRentMonthly)}</td>
+              </tr>
+              <tr>
+                <th>ローン返済額(元利均等)</th>
+                <td>{signedYenText(-sim.monthlyPayment)}</td>
+              </tr>
+              <tr>
+                <th>管理費・修繕積立金</th>
+                <td>{signedYenText(-input.managementFeeMonthly)}</td>
+              </tr>
+              <tr>
+                <th>固定資産税・都市計画税(年額 ÷ 12)</th>
+                <td>{signedYenText(-propertyTaxLine)}</td>
+              </tr>
+              <tr className="ledger-total">
+                <th>月々のキャッシュフロー</th>
+                <td className={sim.monthlyCashFlow < 0 ? 'is-negative' : ''}>
+                  {signedYenText(sim.monthlyCashFlow)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="basis-note">
+            ローン返済額は 借入額 {manText(sim.loanPrincipal)}・金利{' '}
+            {(input.interestRate * 100).toFixed(3)}%・{input.loanTermYears}年 の元利均等返済。
+            固定資産税・都市計画税は年額 {yenText(input.propertyTaxAnnual)} を12で割った額です。
+          </p>
+        </div>
+
+        <div className="basis-card">
+          <h3 className="card-bar">価格の内訳と耐用年数</h3>
+          <table className="ledger">
+            <tbody>
+              <tr className="ledger-total">
+                <th>物件価格</th>
+                <td>{manText(input.price)}</td>
+              </tr>
+              <tr>
+                <th className="indent-1">土地</th>
+                <td>{manText(sim.landPrice)}</td>
+              </tr>
+              <tr>
+                <th className="indent-1">建物</th>
+                <td>{manText(input.buildingPrice)}</td>
+              </tr>
+              {hasFixtures && (
+                <>
+                  <tr>
+                    <th className="indent-2">建物本体</th>
+                    <td>
+                      {manText(shellPrice)}
+                      <span className="ledger-sub">{shellPercent}%</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th className="indent-2">設備</th>
+                    <td>
+                      {manText(fixturesPrice)}
+                      <span className="ledger-sub">{fixturesPercent}%</span>
+                    </td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+          <table className="ledger ledger-life">
+            <tbody>
+              <tr className="ledger-total">
+                <th>耐用年数</th>
+                <td />
+              </tr>
+              <tr>
+                <th className="indent-1">{hasFixtures ? '建物本体' : '建物'}({structure.label})</th>
+                <td>
+                  <span className="ledger-derivation">{lifeText(structure.usefulLife)}</span>
+                  <strong>{sim.usefulLife}年</strong>
+                </td>
+              </tr>
+              {hasFixtures && (
+                <tr>
+                  <th className="indent-1">設備</th>
+                  <td>
+                    <span className="ledger-derivation">{lifeText(FIXTURES_USEFUL_LIFE)}</span>
+                    <strong>{sim.fixturesUsefulLife}年</strong>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <p className="basis-note">
+            {hasFixtures
+              ? '建物価格のうち設備(建物附属設備)の割合で按分しています。'
+              : `${structure.label}では設備を分けず、建物一本で償却します。`}
+            中古の耐用年数は簡便法(経過年数が法定を超える場合は法定×20%、
+            超えない場合は(法定−経過)＋経過×20%、年未満切り捨て)によります。
+          </p>
+        </div>
+      </div>
+    </section>
   )
 }

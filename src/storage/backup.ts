@@ -1,3 +1,4 @@
+import { withDefaults } from '../domain/defaults'
 import { blobToDataUrl, dataUrlToBlob } from './images'
 import { listProposals, putProposal } from './db'
 import type { SavedProposal } from './types'
@@ -54,6 +55,8 @@ export async function importBackup(text: string): Promise<number> {
   for (const p of backup.proposals) {
     await putProposal({
       ...p,
+      // 古いバックアップには後から増えた項目が無い。既定値で埋める
+      input: withDefaults(p.input),
       photo: p.photo ? await dataUrlToBlob(p.photo) : null,
     })
   }

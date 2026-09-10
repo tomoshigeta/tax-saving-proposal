@@ -2,8 +2,9 @@ import { amortize, landInterestRatio } from './loan'
 import { annualDepreciation, depreciationBases, usefulLifeFor } from './depreciation'
 import { FIXTURES_USEFUL_LIFE, STRUCTURES, effectiveFixturesPrice } from './structures'
 import {
+  MAX_SIMULATION_YEARS,
+  MIN_SIMULATION_YEARS,
   RESIDENT_TAX_PERCENT,
-  SIMULATION_YEARS,
   type ProposalInput,
   type Simulation,
   type YearRow,
@@ -24,6 +25,12 @@ import {
 const y = (n: number): Yen => yen(floorYen(n))
 const py = (n: number): YenPerYear => perYear(floorYen(n))
 
+/** 試算期間を範囲内の整数に丸める。範囲外は validate が弾くが、計算側でも壊れないようにする */
+export function clampSimulationYears(n: number): number {
+  if (!Number.isFinite(n)) return MIN_SIMULATION_YEARS
+  return Math.min(MAX_SIMULATION_YEARS, Math.max(MIN_SIMULATION_YEARS, Math.trunc(n)))
+}
+
 /**
  * 提案書の全数値を1回で算出する。
  *
@@ -35,8 +42,8 @@ export function simulate(input: ProposalInput): Simulation {
   const landPrice = y(input.price - input.buildingPrice)
   const loanPrincipal = y(Math.max(0, input.price - input.ownFunds))
 
-  // 試算期間は SIMULATION_YEARS 固定。顧客の定年時期には依存させない。
-  const simulationYears = SIMULATION_YEARS
+  // 試算期間は物件ごとの入力。顧客が「あと何年働くか」に合わせて決める(D10d)。
+  const simulationYears = clampSimulationYears(input.simulationYears)
 
   // --- 耐用年数 ---
   const statutory = STRUCTURES[input.structure].usefulLife
@@ -85,10 +92,11 @@ export function simulate(input: ProposalInput): Simulation {
         ? 0
         : annualDepreciation(bases.fixtures, fixturesUsefulLife, year))
 
+    // ローン事務手数料と登記費用(登録免許税・司法書士報酬)は初年度の必要経費
     const otherExpenses =
       annualize(input.managementFeeMonthly) +
       input.propertyTaxAnnual +
-      (year === 1 ? input.loanArrangementFee : 0)
+      (year === 1 ? input.loanArrangementFee + input.registrationFee : 0)
 
     const realEstateIncome = rentIncome - depreciation - interestPaid - otherExpenses
     const landInterest = interestPaid * landRatio
@@ -114,12 +122,16 @@ export function simulate(input: ProposalInput): Simulation {
     })
   }
 
+  const initialCosts = y(input.brokerageFee + input.loanArrangementFee + input.registrationFee)
+
   return {
     monthlyCashFlow,
     monthlyPayment: perMonth(floorYen(schedule.monthlyPayment)),
     loanPrincipal,
     landPrice,
-    initialCashOutlay: y(input.ownFunds + input.brokerageFee + input.loanArrangementFee),
+    initialCosts,
+    initialCashOutlay: y(input.ownFunds + initialCosts),
+    monthlyPropertyTax: perMonth(floorYen(input.propertyTaxAnnual / 12)),
     usefulLife,
     fixturesUsefulLife,
     shellBasis: y(bases.shell),

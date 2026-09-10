@@ -1,5 +1,11 @@
 import { emptyInput } from '../domain/defaults'
-import { INCOME_TAX_RATES, type IncomeTaxRatePercent, type ProposalInput } from '../domain/types'
+import {
+  INCOME_TAX_RATES,
+  MAX_SIMULATION_YEARS,
+  MIN_SIMULATION_YEARS,
+  type IncomeTaxRatePercent,
+  type ProposalInput,
+} from '../domain/types'
 import { perMonth, perYear, rate, yen } from '../domain/units'
 import {
   EXCEL_HEADERS,
@@ -43,8 +49,19 @@ function num(v: Cell): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-function readRow(row: Cell[], excelRow: number): ProposalInput | RowProblem {
-  const at = (header: string): Cell => row[EXCEL_HEADERS.indexOf(header)]
+/**
+ * 見出し名 → ファイル上の列番号。
+ *
+ * 列の位置ではなく見出し名で引く。列を後から足したときに、古いテンプレートで書いた
+ * ファイルも読めるようにするため。無い列(任意項目)は -1 で、読むと空欄扱いになる。
+ */
+type ColumnIndex = ReadonlyMap<string, number>
+
+function readRow(row: Cell[], columns: ColumnIndex, excelRow: number): ProposalInput | RowProblem {
+  const at = (header: string): Cell => {
+    const i = columns.get(header) ?? -1
+    return i < 0 ? null : row[i]
+  }
   const fail = (message: string): RowProblem => ({ row: excelRow, message })
 
   const missing = EXCEL_COLUMNS.filter(
@@ -75,8 +92,19 @@ function readRow(row: Cell[], excelRow: number): ProposalInput | RowProblem {
   }
   const n = (header: string): number => numeric[header] ?? 0
 
+  // 任意項目が空なら既定値(15年)。書いてあれば範囲を確かめる
+  const defaults = emptyInput()
+  const simulationYears = text(at('試算期間(年)')) === '' ? defaults.simulationYears : n('試算期間(年)')
+  if (
+    !Number.isInteger(simulationYears) ||
+    simulationYears < MIN_SIMULATION_YEARS ||
+    simulationYears > MAX_SIMULATION_YEARS
+  ) {
+    return fail(`試算期間(年)は ${MIN_SIMULATION_YEARS}〜${MAX_SIMULATION_YEARS} の整数にしてください`)
+  }
+
   return {
-    ...emptyInput(),
+    ...defaults,
     propertyName: text(at('物件名')),
     customerName: text(at('顧客名')),
     address: text(at('住所')),
@@ -91,22 +119,30 @@ function readRow(row: Cell[], excelRow: number): ProposalInput | RowProblem {
     loanTermYears: n('返済期間(年)'),
     brokerageFee: yen(n('仲介手数料')),
     loanArrangementFee: yen(n('ローン事務手数料')),
+    registrationFee: yen(n('登記費用')),
     guaranteedRentMonthly: perMonth(n('保証月額家賃')),
     managementFeeMonthly: perMonth(n('管理費・修繕積立金(月額)')),
     propertyTaxAnnual: perYear(n('固定資産税・都市計画税(年額)')),
     currentAge: n('現在年齢'),
     incomeTaxRatePercent: taxRate as IncomeTaxRatePercent,
+    simulationYears,
   }
 }
 
 /** 2次元配列を物件データに変換する。ファイルの読み込みとは分けてあり、テストから直接呼べる */
 export function readGrid(grid: Grid): ImportResult {
   const header = (grid[0] ?? []).map(text)
-  const expected = [...EXCEL_HEADERS]
-  if (header.length < expected.length || expected.some((h, i) => header[i] !== h)) {
-    const firstDiff = expected.findIndex((h, i) => header[i] !== h)
+  const columns: ColumnIndex = new Map(
+    EXCEL_HEADERS.map((h) => [h, header.indexOf(h)] as const),
+  )
+
+  // 必須列が1つでも無ければテンプレートではない。任意列(後から足した列など)は無くてもよい
+  const missingRequired = EXCEL_COLUMNS.filter(
+    (c: ExcelColumn) => c.required && (columns.get(c.header) ?? -1) < 0,
+  ).map((c) => c.header)
+  if (missingRequired.length > 0) {
     throw new ExcelFormatError(
-      `見出し行がテンプレートと違います(${firstDiff + 1}列目: 「${expected[firstDiff]}」のはずが「${header[firstDiff] ?? '空欄'}」)。` +
+      `見出し行がテンプレートと違います(見つからない列: ${missingRequired.join(' / ')})。` +
         'テンプレートをダウンロードし直してください。',
     )
   }
@@ -117,7 +153,7 @@ export function readGrid(grid: Grid): ImportResult {
   for (let i = FIRST_DATA_ROW - 1; i < grid.length; i++) {
     const row = grid[i] ?? []
     if (row.every((cell) => text(cell) === '')) continue
-    const result = readRow(row, i + 1)
+    const result = readRow(row, columns, i + 1)
     if ('row' in result) problems.push(result)
     else inputs.push(result)
   }
