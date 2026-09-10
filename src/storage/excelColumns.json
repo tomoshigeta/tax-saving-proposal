@@ -24,10 +24,12 @@
     { "header": "返済期間(年)", "required": true, "kind": "years", "example": 35, "width": 12 },
     { "header": "仲介手数料", "required": false, "kind": "yen", "example": 990000, "width": 14 },
     { "header": "ローン事務手数料", "required": false, "kind": "yen", "example": 110000, "width": 16 },
+    { "header": "登記費用", "required": false, "kind": "yen", "example": 250000, "width": 14 },
     { "header": "保証月額家賃", "required": true, "kind": "yen", "example": 95000, "width": 14 },
     { "header": "管理費・修繕積立金(月額)", "required": true, "kind": "yen", "example": 15000, "width": 22 },
     { "header": "固定資産税・都市計画税(年額)", "required": true, "kind": "yen", "example": 80000, "width": 24 },
     { "header": "現在年齢", "required": true, "kind": "years", "example": 50, "width": 10 },
+    { "header": "試算期間(年)", "required": false, "kind": "years", "example": 15, "width": 12 },
     { "header": "所得税率(%)", "required": true, "kind": "taxRate", "example": 33, "width": 12 }
   ]
 }

@@ -1,5 +1,5 @@
 import { STRUCTURES } from './structures'
-import type { ProposalInput } from './types'
+import { MAX_SIMULATION_YEARS, MIN_SIMULATION_YEARS, type ProposalInput } from './types'
 
 export interface FieldError {
   field: keyof ProposalInput
@@ -39,7 +39,17 @@ export function validate(input: ProposalInput): FieldError[] {
   require('guaranteedRentMonthly', input.guaranteedRentMonthly > 0, '保証月額家賃を入力してください')
   require('managementFeeMonthly', input.managementFeeMonthly >= 0, '管理費は0以上で入力してください')
   require('propertyTaxAnnual', input.propertyTaxAnnual >= 0, '固都税は0以上で入力してください')
+  require('brokerageFee', input.brokerageFee >= 0, '仲介手数料は0以上で入力してください')
+  require('loanArrangementFee', input.loanArrangementFee >= 0, 'ローン事務手数料は0以上で入力してください')
+  require('registrationFee', input.registrationFee >= 0, '登記費用は0以上で入力してください')
   require('currentAge', input.currentAge > 0, '現在年齢を入力してください')
+  require(
+    'simulationYears',
+    Number.isInteger(input.simulationYears) &&
+      input.simulationYears >= MIN_SIMULATION_YEARS &&
+      input.simulationYears <= MAX_SIMULATION_YEARS,
+    `試算期間は ${MIN_SIMULATION_YEARS}〜${MAX_SIMULATION_YEARS} 年の整数で入力してください`,
+  )
 
   return errors
 }

@@ -30,7 +30,7 @@ const axisText = { color: VIZ.textMuted, font: { size: 9 } }
 const nf = new Intl.NumberFormat('ja-JP')
 const manTick = (v: number) => (v === 0 ? '0' : `${nf.format(Math.round(v / 10_000))}万`)
 
-/** 両グラフで横軸(年)を揃えるための共通設定 */
+/** 横軸(年)の共通設定。節税額は試算期間、残債は返済期間と範囲は違うが、目盛りの規則は揃える */
 const sharedX = (labels: number[]) => ({
   type: 'category' as const,
   grid: { display: false },

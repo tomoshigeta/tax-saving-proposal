@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import { STRUCTURES, STRUCTURE_KEYS, allowsFixtureSplit } from '../domain/structures'
-import { INCOME_TAX_RATES, RESIDENT_TAX_PERCENT, type ProposalInput } from '../domain/types'
+import {
+  INCOME_TAX_RATES,
+  MAX_SIMULATION_YEARS,
+  MIN_SIMULATION_YEARS,
+  RESIDENT_TAX_PERCENT,
+  type ProposalInput,
+} from '../domain/types'
 import { simulate } from '../domain/simulate'
 import { validate } from '../domain/validate'
 import { normalizeImage } from '../storage/images'
@@ -188,6 +194,7 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
               onChange={(n) => set('brokerageFee', n as ProposalInput['brokerageFee'])}
               step={10_000}
               hint="現金支出。税務上の経費ではなく、建物分は取得価額に算入します"
+              error={errorFor('brokerageFee')}
             />
             <NumberField
               label="ローン事務手数料"
@@ -197,6 +204,15 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
               }
               step={10_000}
               hint="現金支出かつ初年度の必要経費"
+              error={errorFor('loanArrangementFee')}
+            />
+            <NumberField
+              label="登記費用"
+              value={input.registrationFee}
+              onChange={(n) => set('registrationFee', n as ProposalInput['registrationFee'])}
+              step={10_000}
+              hint="登録免許税と司法書士報酬の合計。現金支出かつ初年度の必要経費"
+              error={errorFor('registrationFee')}
             />
           </fieldset>
 
@@ -240,8 +256,16 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
               value={input.currentAge}
               onChange={(n) => set('currentAge', n)}
               suffix="歳"
-              hint="年次明細の年齢欄に使います。試算期間は15年で固定です"
+              hint="年次明細の年齢欄に使います。金額計算には影響しません"
               error={errorFor('currentAge')}
+            />
+            <NumberField
+              label="試算期間"
+              value={input.simulationYears}
+              onChange={(n) => set('simulationYears', n)}
+              suffix="年"
+              hint={`節税効果を合計したい年数。定年までの年数など(${MIN_SIMULATION_YEARS}〜${MAX_SIMULATION_YEARS})`}
+              error={errorFor('simulationYears')}
             />
             <label className="field">
               <span className="field-label">所得税率</span>
@@ -292,6 +316,10 @@ export function EditScreen({ proposal, onChange, onSave, onPreview, onBack, savi
                 <div>
                   <dt>月々返済額</dt>
                   <dd>{yenText(sim.monthlyPayment)}</dd>
+                </div>
+                <div>
+                  <dt>初期費用</dt>
+                  <dd>{yenText(sim.initialCosts)}</dd>
                 </div>
                 <div>
                   <dt>手元初期支出</dt>

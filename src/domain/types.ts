@@ -9,12 +9,16 @@ export type IncomeTaxRatePercent = (typeof INCOME_TAX_RATES)[number]
 export const RESIDENT_TAX_PERCENT = 10
 
 /**
- * 試算期間(年)。定年がいつかに関わらず固定する。
+ * 試算期間(年)の既定値と範囲。
  *
- * 節税が効くのは給与所得がある間だけで、想定顧客は50歳前後・定年65歳。
- * 顧客ごとに期間が変わると提案書どうしを見比べられないため、15年に固定した。
+ * 当初は15年固定だったが、顧客によって「あと何年働くか」が違い、その年数分の
+ * 節税効果を見せたいという要望から、物件ごとの入力項目にした(決定記録 D10d)。
+ * 既定の15年は、想定顧客(50歳前後・定年65歳)の実務上の値であり、
+ * 旧データを読み込んだときにも数字が変わらないようにするための値でもある。
  */
-export const SIMULATION_YEARS = 15
+export const DEFAULT_SIMULATION_YEARS = 15
+export const MIN_SIMULATION_YEARS = 1
+export const MAX_SIMULATION_YEARS = 35
 
 export interface ProposalInput {
   // --- 物件 ---
@@ -41,6 +45,8 @@ export interface ProposalInput {
   brokerageFee: Yen
   /** ローン事務手数料 G。現金支出かつ初年度の必要経費 */
   loanArrangementFee: Yen
+  /** 登記費用 H(登録免許税・司法書士報酬)。現金支出かつ初年度の必要経費(国税庁 No.2215) */
+  registrationFee: Yen
 
   // --- 収支 ---
   /** 保証月額家賃 Rm */
@@ -53,6 +59,8 @@ export interface ProposalInput {
   // --- 顧客 ---
   currentAge: number
   incomeTaxRatePercent: IncomeTaxRatePercent
+  /** 試算期間 N(年)。グラフ・年次明細・節税効果合計の全てがこの年数で動く */
+  simulationYears: number
 }
 
 export interface YearRow {
@@ -65,7 +73,7 @@ export interface YearRow {
   interestPaid: YenPerYear
   /** 支払利息のうち土地取得に対応する部分。損益通算できない */
   landInterest: YenPerYear
-  /** 管理費・固都税・初年度のローン事務手数料 */
+  /** 管理費・固都税・初年度のローン事務手数料と登記費用 */
   otherExpenses: YenPerYear
   /** 賃料収入 - 経費。マイナスなら赤字 */
   realEstateIncome: YenPerYear
@@ -82,8 +90,12 @@ export interface Simulation {
   monthlyPayment: YenPerMonth
   loanPrincipal: Yen
   landPrice: Yen
-  /** 自己資金 + 仲介手数料 + ローン事務手数料 */
+  /** 初期費用 = 仲介手数料 + ローン事務手数料 + 登記費用。自己資金は含まない */
+  initialCosts: Yen
+  /** 手元初期支出 = 自己資金 + 初期費用 */
   initialCashOutlay: Yen
+  /** 固都税の月割額(年額 ÷ 12)。月々CFの内訳表示に使う */
+  monthlyPropertyTax: YenPerMonth
   /** 建物本体の耐用年数 */
   usefulLife: number
   /** 設備の耐用年数。設備分離しない構造では null */
@@ -92,9 +104,14 @@ export interface Simulation {
   fixturesBasis: Yen
   landInterestRatio: Rate
   combinedTaxRate: Rate
-  /** 試算期間(年)。SIMULATION_YEARS 固定で、rows.length に一致する */
+  /** 試算期間(年)。入力値を範囲内に丸めたもので、rows.length に一致する */
   simulationYears: number
   /** 試算期間の節税額合計 */
   totalTaxSaving: Yen
   rows: YearRow[]
+  /**
+   * 返済期間の全年の年末残債(1年目〜完済年)。残債グラフ専用で、試算期間とは独立に
+   * 必ず 0 に着地する。年次明細(rows)は試算期間で打ち切る。
+   */
+  loanBalanceSeries: { year: number; balanceEnd: Yen }[]
 }

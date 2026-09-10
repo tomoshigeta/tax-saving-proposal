@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { simulate } from './simulate'
-import { SIMULATION_YEARS, type ProposalInput } from './types'
+import { DEFAULT_SIMULATION_YEARS, MAX_SIMULATION_YEARS, type ProposalInput } from './types'
 import { perMonth, perYear, rate, yen } from './units'
 
 /**
@@ -21,11 +21,13 @@ const baseInput: ProposalInput = {
   loanTermYears: 35,
   brokerageFee: yen(990_000),
   loanArrangementFee: yen(110_000),
+  registrationFee: yen(0),
   guaranteedRentMonthly: perMonth(95_000),
   managementFeeMonthly: perMonth(15_000),
   propertyTaxAnnual: perYear(80_000),
   currentAge: 50,
   incomeTaxRatePercent: 33,
+  simulationYears: DEFAULT_SIMULATION_YEARS,
 }
 
 describe('simulate', () => {
@@ -44,11 +46,30 @@ describe('simulate', () => {
     expect(s.monthlyCashFlow).toBe(-26_045)
   })
 
-  it('試算期間は15年固定。返済期間が長くても15年で打ち切る', () => {
+  it('試算期間の既定は15年。返済期間が長くても15年で打ち切る', () => {
     const s = simulate(baseInput)
-    expect(s.simulationYears).toBe(SIMULATION_YEARS)
+    expect(s.simulationYears).toBe(15)
     expect(s.rows).toHaveLength(15)
     expect(s.rows.at(-1)!.year).toBe(15)
+  })
+
+  it('試算期間を入力すると、明細の行数と節税効果合計がその年数で動く', () => {
+    const three = simulate({ ...baseInput, simulationYears: 3 })
+    expect(three.simulationYears).toBe(3)
+    expect(three.rows).toHaveLength(3)
+    expect(three.rows.at(-1)!.year).toBe(3)
+
+    // 3年分の合計は15年分の先頭3年と一致する(年ごとの数字は期間に依存しない)
+    const fifteen = simulate(baseInput)
+    const firstThree = fifteen.rows.slice(0, 3).reduce((sum, r) => sum + Math.trunc(r.taxSaving), 0)
+    expect(three.totalTaxSaving).toBe(firstThree)
+    expect(three.rows[2]!.loanBalanceEnd).toBe(fifteen.rows[2]!.loanBalanceEnd)
+  })
+
+  it('試算期間が範囲外でも計算は壊れない(範囲内に丸める)', () => {
+    expect(simulate({ ...baseInput, simulationYears: 0 }).rows).toHaveLength(1)
+    expect(simulate({ ...baseInput, simulationYears: 99 }).rows).toHaveLength(MAX_SIMULATION_YEARS)
+    expect(simulate({ ...baseInput, simulationYears: 7.9 }).rows).toHaveLength(7)
   })
 
   it('顧客の年齢が変わっても試算期間は変わらない', () => {
@@ -68,6 +89,25 @@ describe('simulate', () => {
     expect(s.rows[9]!.loanBalanceEnd).toBe(0)
     expect(s.rows[12]!.interestPaid).toBe(0)
     expect(s.rows[12]!.loanBalanceEnd).toBe(0)
+  })
+
+  it('残債グラフ用の系列は返済期間の全年で、必ず0に着地する', () => {
+    const s = simulate(baseInput) // 35年ローン、試算15年
+    expect(s.loanBalanceSeries).toHaveLength(35)
+    expect(s.loanBalanceSeries[0]!.year).toBe(1)
+    expect(s.loanBalanceSeries.at(-1)!.year).toBe(35)
+    expect(s.loanBalanceSeries.at(-1)!.balanceEnd).toBe(0)
+    // 試算期間内は年次明細と同じ値
+    expect(s.loanBalanceSeries[14]!.balanceEnd).toBe(s.rows[14]!.loanBalanceEnd)
+    // 年次明細は試算期間で打ち切ったまま
+    expect(s.rows).toHaveLength(15)
+  })
+
+  it('返済期間が試算期間より短くても、残債系列は返済期間で終わる', () => {
+    const s = simulate({ ...baseInput, loanTermYears: 10, simulationYears: 15 })
+    expect(s.loanBalanceSeries).toHaveLength(10)
+    expect(s.loanBalanceSeries.at(-1)!.balanceEnd).toBe(0)
+    expect(s.rows).toHaveLength(15)
   })
 
   it('15年後のローン残債が最終行に出る', () => {
@@ -111,6 +151,24 @@ describe('simulate', () => {
     const s = simulate(baseInput)
     expect(s.rows[0]!.otherExpenses).toBe(370_000)
     expect(s.rows[1]!.otherExpenses).toBe(260_000) // 180,000 + 80,000
+  })
+
+  it('登記費用は初年度の経費に入り、初年度の節税額を増やす', () => {
+    const base = simulate(baseInput)
+    const s = simulate({ ...baseInput, registrationFee: yen(200_000) })
+    expect(s.rows[0]!.otherExpenses).toBe(570_000) // 370,000 + 200,000
+    expect(s.rows[1]!.otherExpenses).toBe(260_000) // 2年目以降は変わらない
+    // 赤字が 200,000 増え、その 43% が節税額に乗る
+    expect(s.rows[0]!.taxSaving - base.rows[0]!.taxSaving).toBeCloseTo(86_000, -1)
+    // 現金支出にも効く
+    expect(s.initialCosts - base.initialCosts).toBe(200_000)
+    expect(s.initialCashOutlay - base.initialCashOutlay).toBe(200_000)
+  })
+
+  it('登記費用が0なら、項目が増える前と同じ数字になる', () => {
+    const s = simulate({ ...baseInput, registrationFee: yen(0) })
+    expect(s.rows[0]!.otherExpenses).toBe(370_000)
+    expect(s.rows[0]!.taxSaving).toBeCloseTo(264_073, -2)
   })
 
   it('仲介手数料は経費に入らず、現金支出にだけ現れる', () => {
@@ -171,10 +229,16 @@ describe('simulate', () => {
     expect(wood.usefulLife).toBe(6)
   })
 
-  it('手元初期支出は 自己資金 + 仲介手数料 + ローン事務手数料', () => {
-    const s = simulate({ ...baseInput, ownFunds: yen(3_000_000) })
-    expect(s.initialCashOutlay).toBe(3_000_000 + 990_000 + 110_000)
+  it('初期費用は 仲介手数料 + ローン事務手数料 + 登記費用。手元初期支出はそれに自己資金を足す', () => {
+    const s = simulate({ ...baseInput, ownFunds: yen(3_000_000), registrationFee: yen(150_000) })
+    expect(s.initialCosts).toBe(990_000 + 110_000 + 150_000)
+    expect(s.initialCashOutlay).toBe(3_000_000 + 990_000 + 110_000 + 150_000)
     expect(s.loanPrincipal).toBe(27_000_000)
+  })
+
+  it('固都税の月割額は年額÷12の円未満切り捨て', () => {
+    const s = simulate(baseInput)
+    expect(s.monthlyPropertyTax).toBe(6_666)
   })
 
   it('自己資金が物件価格を超えても借入額はマイナスにならない', () => {
